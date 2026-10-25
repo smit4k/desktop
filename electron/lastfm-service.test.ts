@@ -157,6 +157,62 @@ describe("Last.fm settings request state", () => {
     expect(service.status()).toEqual(before);
     expect(save).not.toHaveBeenCalled();
   });
+
+  it("keeps unreadable storage protected after retry and request cancellation", async () => {
+    const { service, load, save, fetch } = setup();
+    load.mockImplementationOnce(() => {
+      throw new Error("cannot decrypt");
+    });
+    service.setOwner("unreadable-owner");
+    await service.retry();
+    service.cancel();
+    await service.retry();
+    expect(service.status().error).toBe("storage_unreadable");
+    expect(() => service.settings({ nowPlaying: false })).toThrow();
+    await expect(service.connect()).rejects.toThrow();
+    expect(save).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("allows settings only after the owner's saved data reloads successfully", () => {
+    const { service, load, save, stored } = setup();
+    stored.set("unreadable-owner", {
+      ...emptyLastfmData(),
+      username: "saved-user",
+      queue: [listen()],
+    });
+    load.mockImplementationOnce(() => {
+      throw new Error("cannot decrypt");
+    });
+    service.setOwner("unreadable-owner");
+    service.setOwner("unreadable-owner");
+    expect(service.status()).toMatchObject({
+      username: "saved-user",
+      pending: 1,
+      error: undefined,
+    });
+    service.settings({ nowPlaying: false });
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(stored.get("unreadable-owner")?.queue).toEqual([listen()]);
+  });
+
+  it("allows an explicit disconnect to reset unreadable storage", async () => {
+    const { service, load, stored } = setup();
+    load.mockImplementationOnce(() => {
+      throw new Error("cannot decrypt");
+    });
+    service.setOwner("unreadable-owner");
+    await service.retry();
+    service.disconnect();
+    service.settings({ nowPlaying: false });
+    expect(service.status()).toMatchObject({
+      connected: false,
+      pending: 0,
+      nowPlaying: false,
+      error: undefined,
+    });
+    expect(stored.get("unreadable-owner")?.queue).toEqual([]);
+  });
 });
 
 describe("Last.fm desktop authorization", () => {

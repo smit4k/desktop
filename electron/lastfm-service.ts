@@ -39,6 +39,7 @@ export class LastfmService {
   private failures = 0;
   private nowPlayingId = "";
   private blocked = false;
+  private storageUnreadable = false;
 
   constructor(private readonly deps: LastfmDeps) {}
 
@@ -57,7 +58,7 @@ export class LastfmService {
       nowPlaying: this.data.nowPlaying,
       pending: this.data.queue.length,
       sessionOnly: !this.deps.secure(),
-      error: this.error,
+      error: this.storageUnreadable ? "storage_unreadable" : this.error,
     };
   }
 
@@ -67,6 +68,8 @@ export class LastfmService {
 
   private persist() {
     if (!this.owner) return;
+    if (this.storageUnreadable)
+      throw new Error("Stored Last.fm data is unreadable.");
     this.deps.save(this.owner, this.data);
   }
 
@@ -85,17 +88,17 @@ export class LastfmService {
   }
 
   setOwner(owner: string | null) {
-    if (this.owner === owner) return;
+    if (this.owner === owner && !this.storageUnreadable) return;
     this.resetRequests();
     this.owner = owner;
     this.data = emptyLastfmData();
+    this.storageUnreadable = false;
     this.error = undefined;
     if (owner) {
       try {
         this.data = this.deps.load(owner);
       } catch {
-        this.error = "storage_unreadable";
-        this.blocked = true;
+        this.storageUnreadable = true;
       }
     }
     this.emit();
@@ -104,6 +107,8 @@ export class LastfmService {
 
   async connect(credentials?: LastfmCredentials): Promise<LastfmStatus> {
     if (!this.owner) throw new Error("Sign in to Liner first.");
+    if (this.storageUnreadable)
+      throw new Error("Stored Last.fm data is unreadable.");
     if (credentials !== undefined && !validCredentials(credentials))
       throw new Error("Invalid Last.fm application credentials.");
     const config = credentials ?? this.credentials();
@@ -228,6 +233,7 @@ export class LastfmService {
 
   disconnect(): LastfmStatus {
     this.resetRequests();
+    this.storageUnreadable = false;
     this.data = { ...emptyLastfmData(), credentials: this.data.credentials };
     this.error = undefined;
     try {
@@ -247,7 +253,7 @@ export class LastfmService {
       (patch.nowPlaying !== undefined && typeof patch.nowPlaying !== "boolean")
     )
       throw new Error("Invalid Last.fm settings.");
-    if (this.blocked && this.error === "storage_unreadable")
+    if (this.storageUnreadable)
       throw new Error("Stored Last.fm data is unreadable.");
     const previous = this.data;
     this.data = {
@@ -284,10 +290,7 @@ export class LastfmService {
       this.data.queue.some((item) => item.id === listen.id)
     )
       return true;
-    if (
-      this.data.queue.length >= 10000 ||
-      (this.blocked && this.error === "storage_unreadable")
-    ) {
+    if (this.data.queue.length >= 10000 || this.storageUnreadable) {
       this.error =
         this.data.queue.length >= 10000 ? "queue_full" : "storage_unreadable";
       this.emit();
@@ -353,6 +356,7 @@ export class LastfmService {
   }
 
   async retry(): Promise<LastfmStatus> {
+    if (this.storageUnreadable) return this.status();
     this.blocked = false;
     this.failures = 0;
     if (this.timer) clearTimeout(this.timer);
@@ -378,6 +382,7 @@ export class LastfmService {
       this.flushing ||
       this.timer ||
       this.blocked ||
+      this.storageUnreadable ||
       this.pendingAuth ||
       this.authorizing ||
       !this.owner ||
