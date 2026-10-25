@@ -247,8 +247,9 @@ export class LastfmService {
       (patch.nowPlaying !== undefined && typeof patch.nowPlaying !== "boolean")
     )
       throw new Error("Invalid Last.fm settings.");
+    if (this.blocked && this.error === "storage_unreadable")
+      throw new Error("Stored Last.fm data is unreadable.");
     const previous = this.data;
-    this.resetRequests();
     this.data = {
       ...this.data,
       enabled: patch.enabled ?? this.data.enabled,
@@ -259,6 +260,10 @@ export class LastfmService {
     } catch {
       this.data = previous;
       this.error = "storage_failed";
+    }
+    if (!this.data.enabled && this.timer) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
     }
     this.emit();
     void this.flush();

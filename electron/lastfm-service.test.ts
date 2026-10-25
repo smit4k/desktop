@@ -63,19 +63,101 @@ function setup(seed: Partial<LastfmData> = {}, authenticated = true) {
   });
   const changed = vi.fn();
   const openBrowser = vi.fn(async () => {});
+  const load = vi.fn((owner: string) =>
+    structuredClone(stored.get(owner) ?? emptyLastfmData()),
+  );
   const service = new LastfmService({
     api: new LastfmApi(fetch),
     credentials,
     secure: () => true,
-    load: (owner) => structuredClone(stored.get(owner) ?? emptyLastfmData()),
+    load,
     save,
     changed,
     openBrowser,
   });
   services.push(service);
   service.setOwner("liner-a");
-  return { service, stored, fetch, save, changed, openBrowser };
+  return { service, stored, fetch, save, load, changed, openBrowser };
 }
+
+describe("Last.fm settings request state", () => {
+  it("preserves pending browser authorization", async () => {
+    const { service } = setup({}, false);
+    await service.connect();
+    service.settings({ nowPlaying: false });
+    expect(service.status().authorizing).toBe(true);
+    await service.finish();
+    expect(service.status()).toMatchObject({
+      connected: true,
+      nowPlaying: false,
+      error: undefined,
+    });
+  });
+
+  it("does not abort or restart an in-flight batch when settings change", async () => {
+    const { service, fetch, stored } = setup();
+    let resolve!: (response: Response) => void;
+    fetch.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    await service.enqueue(listen());
+    const signal = fetch.mock.calls[0][1]?.signal;
+    service.settings({ nowPlaying: false });
+    service.settings({ enabled: false });
+    expect(signal?.aborted).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    resolve({ ok: true, json: async () => success() } as Response);
+    await settle();
+    expect(service.status()).toMatchObject({ pending: 0, enabled: false });
+    expect(stored.get("liner-a")?.recent).toEqual(["play"]);
+  });
+
+  it("keeps retry backoff when only Now Playing changes", async () => {
+    vi.useFakeTimers();
+    const { service, fetch } = setup();
+    fetch.mockRejectedValueOnce(new Error("offline"));
+    await service.enqueue(listen());
+    await settle();
+    service.settings({ nowPlaying: false });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(service.status().pending).toBe(0);
+  });
+
+  it("clears only the retry timer on disable and preserves the failure count", async () => {
+    vi.useFakeTimers();
+    const { service, fetch } = setup();
+    fetch.mockRejectedValueOnce(new Error("offline"));
+    await service.enqueue(listen());
+    await settle();
+    service.settings({ enabled: false });
+    expect(vi.getTimerCount()).toBe(0);
+    expect(service.status().pending).toBe(1);
+    fetch.mockRejectedValueOnce(new Error("still offline"));
+    service.settings({ enabled: true });
+    await settle();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(service.status().pending).toBe(0);
+  });
+
+  it("rejects settings changes before overwriting unreadable storage", () => {
+    const { service, load, save } = setup();
+    load.mockImplementationOnce(() => {
+      throw new Error("cannot decrypt");
+    });
+    service.setOwner("unreadable-owner");
+    const before = service.status();
+    expect(() => service.settings({ nowPlaying: false })).toThrow();
+    expect(service.status()).toEqual(before);
+    expect(save).not.toHaveBeenCalled();
+  });
+});
 
 describe("Last.fm desktop authorization", () => {
   it("keeps a consumed session usable if saving it fails, and reports the storage failure", async () => {
