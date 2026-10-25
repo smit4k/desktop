@@ -77,6 +77,8 @@ export default function DropdownMenu({
   const setOpen = onOpenChange ?? setInternalOpen;
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const keyboardOpenRef = useRef(false);
+  const [menuTheme, setMenuTheme] = useState<string>();
 
   const [computedPos, setComputedPos] = useState<{
     x: number;
@@ -84,6 +86,13 @@ export default function DropdownMenu({
   } | null>(null);
 
   useLayoutEffect(() => {
+    if (open && containerRef.current) {
+      setMenuTheme(
+        containerRef.current
+          .closest("[data-theme]")
+          ?.getAttribute("data-theme") ?? undefined,
+      );
+    }
     if (!position && open && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = align === "end" ? rect.right : rect.left;
@@ -94,6 +103,17 @@ export default function DropdownMenu({
 
   const targetPos = position || computedPos;
   const isFixed = Boolean(targetPos);
+  useLayoutEffect(() => {
+    if (open && keyboardOpenRef.current) {
+      const selected = menuRef.current?.querySelector<HTMLButtonElement>(
+        "button[aria-current='true']:not(:disabled)",
+      );
+      const first = menuRef.current?.querySelector<HTMLButtonElement>(
+        "button:not(:disabled)",
+      );
+      (selected ?? first)?.focus();
+    }
+  }, [open, isFixed]);
   const fixedStyle = useFixedStyle(
     menuRef,
     isFixed,
@@ -117,6 +137,10 @@ export default function DropdownMenu({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
+        keyboardOpenRef.current = false;
+        containerRef.current
+          ?.querySelector<HTMLButtonElement>("button")
+          ?.focus();
       }
     };
 
@@ -135,6 +159,8 @@ export default function DropdownMenu({
           key="dropdown-menu"
           ref={menuRef}
           data-dropdown-menu="true"
+          data-theme={menuTheme}
+          role="menu"
           initial={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: side === "top" ? 2 : -2 }}
@@ -146,28 +172,59 @@ export default function DropdownMenu({
                 ? "absolute right-0 bottom-full mb-1 z-50"
                 : "absolute right-0 top-full mt-1 z-50"
           }`}
-          style={isFixed ? fixedStyle : {}}
+          style={{
+            ...(isFixed ? fixedStyle : {}),
+            backgroundColor:
+              menuTheme === "dark" ? "rgb(18 20 24 / 88%)" : undefined,
+          }}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(event) => {
+            if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key))
+              return;
+            event.preventDefault();
+            event.stopPropagation();
+            const buttons = Array.from(
+              menuRef.current?.querySelectorAll<HTMLButtonElement>(
+                "button:not(:disabled)",
+              ) ?? [],
+            );
+            const index = buttons.indexOf(
+              document.activeElement as HTMLButtonElement,
+            );
+            const next =
+              event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? buttons.length - 1
+                  : (index +
+                      (event.key === "ArrowUp" ? -1 : 1) +
+                      buttons.length) %
+                    buttons.length;
+            buttons[next]?.focus();
+          }}
         >
           <div className="flex flex-col gap-[1px]">
             {items.map((item) => (
               <button
                 key={item.id}
                 type="button"
+                role={item.active === undefined ? "menuitem" : "menuitemradio"}
+                aria-checked={item.active}
                 disabled={item.disabled}
                 onClick={async (e) => {
                   e.stopPropagation();
                   setOpen(false);
+                  containerRef.current
+                    ?.querySelector<HTMLButtonElement>("button")
+                    ?.focus();
                   await item.onClick();
                 }}
                 className={`group flex w-full h-[30px] items-center gap-[8px] rounded-[8px] px-[9px] text-[13px] font-normal transition-colors border-none bg-transparent text-left cursor-pointer select-none outline-none ${
                   item.danger
                     ? "text-red-400 hover:bg-red-500/10 hover:text-red-400"
-                    : "text-text-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                    : "text-text-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.08] focus-visible:bg-black/[0.08] dark:focus-visible:bg-white/[0.14]"
                 } ${
-                  item.active
-                    ? "bg-black/[0.05] dark:bg-white/[0.08]"
-                    : ""
+                  item.active ? "bg-black/[0.05] dark:bg-white/[0.08]" : ""
                 } disabled:pointer-events-none disabled:opacity-40`}
                 aria-current={item.active ? "true" : undefined}
                 style={{
@@ -198,9 +255,16 @@ export default function DropdownMenu({
     <div
       ref={containerRef}
       className="relative inline-flex"
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+        event.preventDefault();
+        keyboardOpenRef.current = true;
+        setOpen(true);
+      }}
       onClick={(e) => {
         if (!position) {
           e.stopPropagation();
+          keyboardOpenRef.current = e.detail === 0;
           setOpen(!open);
         }
       }}

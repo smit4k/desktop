@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { MusicNote } from "@solar-icons/react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useCoverReady, CoverImage } from "@/features/covers";
+import { useCustomizationStore } from "@/features/settings/store/customizationStore";
 import { cn } from "@/shared/lib";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { VolumePicker } from "./VolumePicker";
+import { ImmersiveCover } from "./ImmersiveCover";
 import { FullscreenTrackInfo } from "./FullscreenTrackInfo";
 import { FullscreenTimeline } from "./FullscreenTimeline";
 import { FullscreenTransportControls } from "./FullscreenTransportControls";
@@ -35,9 +34,10 @@ interface PlayerUiElementsProps {
 }
 
 export function PlayerUiElements({ onClose }: PlayerUiElementsProps) {
-  const track = usePlayerState().currentTrack;
+  const player = usePlayerState();
+  const track = player.currentTrack;
   const coverUrl = track?.coverUrl || "";
-  const isCoverLoaded = useCoverReady(coverUrl);
+  const sleeve = useCustomizationStore((s) => s.immersiveSleeve);
   const scale = useFullscreenColumnScale();
   const scaled = scale > 1;
 
@@ -49,40 +49,14 @@ export function PlayerUiElements({ onClose }: PlayerUiElementsProps) {
       )}
       style={scaled ? { width: Math.round(BASE_COLUMN_WIDTH * scale) } : undefined}
     >
-      <div
-        className={cn(
-          "relative aspect-square w-full shrink-0 overflow-hidden rounded-xl bg-black/20",
-          coverUrl && !isCoverLoaded && "animate-pulse",
-        )}
-      >
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={track?.id || coverUrl || "empty"}
-            initial={{ opacity: 0, filter: "blur(8px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(8px)" }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute inset-0"
-          >
-            {coverUrl ? (
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt={track?.title || ""}
-                fill
-                sizes={`${Math.round(BASE_COLUMN_WIDTH * scale)}px`}
-                priority
-                unoptimized
-                className="rounded-xl object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/5 text-white/40">
-                <MusicNote size={64} />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      <ImmersiveCover
+        sleeve={sleeve}
+        coverUrl={coverUrl}
+        title={track?.title || ""}
+        trackId={track?.id}
+        size={Math.round(BASE_COLUMN_WIDTH * scale)}
+        isPlaying={player.status === "playing"}
+      />
 
       <div className="mt-[24px]">
         <FullscreenTrackInfo onClose={onClose} />

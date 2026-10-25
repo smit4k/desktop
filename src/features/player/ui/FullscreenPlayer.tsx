@@ -10,6 +10,7 @@ import {
 } from "@/features/lyrics";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
+import { ImmersiveSleevePicker } from "./ImmersiveSleevePicker";
 import { DownLine } from "@mingcute/react";
 import { preloadCoverArt, useCoverSrc } from "@/features/covers";
 import "@braccato/core/element";
@@ -513,6 +514,8 @@ export function FullscreenPlayer({
           </AnimatePresence>
         </div>
       </div>
+
+      <ImmersiveSleevePicker />
 
       <button
         type="button"

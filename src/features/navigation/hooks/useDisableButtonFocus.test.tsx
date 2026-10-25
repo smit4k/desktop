@@ -46,7 +46,7 @@ describe("useDisableButtonFocus", () => {
     expect(document.activeElement).not.toBe(button);
   });
 
-  it("blurs a role=\"button\" element the moment it gains focus", () => {
+  it('blurs a role="button" element the moment it gains focus', () => {
     mount();
     const div = document.createElement("div");
     div.setAttribute("role", "button");
@@ -71,4 +71,18 @@ describe("useDisableButtonFocus", () => {
 
     expect(document.activeElement).toBe(input);
   });
+
+  it.each(["data-keyboard-focus", "data-dropdown-menu"])(
+    "allows keyboard focus inside %s",
+    (attribute) => {
+      mount();
+      const picker = document.createElement("div");
+      picker.setAttribute(attribute, "true");
+      const button = document.createElement("button");
+      picker.appendChild(button);
+      document.body.appendChild(picker);
+      act(() => button.focus());
+      expect(document.activeElement).toBe(button);
+    },
+  );
 });

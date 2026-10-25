@@ -1,0 +1,250 @@
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  isolation: isolate;
+}
+
+.housing {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 20%);
+}
+
+.artwork {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 5%);
+}
+
+.media {
+  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+}
+
+.placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: rgb(255 255 255 / 40%);
+}
+
+.plastic,
+.paper,
+.record {
+  pointer-events: none;
+}
+
+/* The clear tray stays still while the printed disc turns inside it. */
+.stage[data-sleeve="cd"] .housing {
+  background: transparent;
+  border-radius: 0;
+}
+
+.stage[data-sleeve="cd"] .media,
+.discSheen {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  mask-image: radial-gradient(circle closest-side, transparent 0 5%, #000 5.5%);
+}
+
+.stage[data-sleeve="cd"] .media {
+  background: conic-gradient(
+    from 40deg,
+    #a4a5a6,
+    #fff,
+    #66686a,
+    #dfe1e2,
+    #fff,
+    #a4a5a6
+  );
+  animation: sleeve-spin 8s linear infinite paused;
+}
+
+.stage[data-sleeve="cd"] .artwork {
+  border-radius: 50%;
+  background: #b5b6b8;
+}
+
+.discSheen {
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle closest-side,
+      transparent 0 25%,
+      #ffffff44 25.5% 26%,
+      transparent 28% 97.5%,
+      #f7f7f7b0 98% 99%,
+      #6c6d70 99.5%
+    ),
+    conic-gradient(
+      from 24deg,
+      #fff4,
+      transparent 40deg 95deg,
+      #d1e7f022 135deg,
+      transparent 170deg,
+      #fff5 205deg,
+      transparent 250deg 305deg,
+      #fff4
+    );
+  box-shadow: inset 0 0 2px 1px #fff7;
+}
+
+.discHub {
+  position: absolute;
+  top: 37%;
+  left: 37%;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle closest-side,
+    transparent 0 24%,
+    #ffffff80 25% 26%,
+    #ffffff14 27% 39%,
+    #ffffff66 40% 41%,
+    transparent 42% 60%,
+    #ffffff55 61% 63%,
+    #eeeeee12 64% 75%,
+    #ffffff88 76% 77%,
+    transparent 78%
+  );
+}
+
+.plastic {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 2px #0007);
+}
+
+.stage[data-sleeve="vinyl"] .housing {
+  inset: 12% 24% 12% 0;
+  border-radius: 1px;
+  background: #d4cbb9;
+  box-shadow:
+    0 20px 24px -14px #000b,
+    3px 1px 4px #0009;
+}
+
+.stage[data-sleeve="vinyl"] .artwork {
+  inset: 1px 2px 2px 1px;
+  border-radius: 0;
+}
+
+.paper {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #d7cbb333;
+  background:
+    linear-gradient(105deg, #fff2, transparent 3% 94%, #0003),
+    linear-gradient(0deg, #0002, transparent 2% 98%, #fff2);
+  box-shadow:
+    inset -2px 0 2px #0004,
+    inset 1px 1px 0 #ffffff40;
+}
+
+.record {
+  position: absolute;
+  width: 72%;
+  aspect-ratio: 1;
+  right: 0;
+  top: 14%;
+  border-radius: 50%;
+  box-shadow:
+    0 16px 24px -12px #000c,
+    inset 0 0 0 1px #7778,
+    inset 0 0 0 4px #111;
+}
+
+.recordSurface {
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  animation: sleeve-spin 1.8s linear infinite paused;
+  background:
+    radial-gradient(
+      circle,
+      #090909 0 1.2%,
+      #aca89c 1.3% 1.9%,
+      #292727 2% 17%,
+      #141313 17.2% 24%,
+      transparent 24.3%
+    ),
+    repeating-radial-gradient(
+      circle,
+      #101010 0 1px,
+      #252525 1px 1.5px,
+      #151515 1.5px 3px
+    );
+}
+
+.recordSurface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 70deg,
+    transparent 0deg 87deg,
+    #ffffff18 88deg 89deg,
+    transparent 90deg 269deg,
+    #ffffff10 270deg 271deg,
+    transparent 272deg
+  );
+  mask-image: radial-gradient(
+    circle closest-side,
+    transparent 0 30%,
+    #000 31% 96%,
+    transparent 97%
+  );
+}
+
+.record::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 15deg,
+    transparent,
+    #ffffff18 35deg,
+    transparent 65deg 170deg,
+    #ffffff20 215deg,
+    transparent 250deg
+  );
+}
+
+.stage[data-playing="true"] .media,
+.stage[data-playing="true"] .recordSurface {
+  animation-play-state: running;
+}
+
+@keyframes sleeve-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-sleeve="cd"] .media,
+  .recordSurface {
+    animation: none;
+  }
+}

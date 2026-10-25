@@ -4,9 +4,14 @@ import { useTheme } from "next-themes";
 import { debouncedStorage } from "@/shared/utils/storage";
 import { usePageBackdropStore } from "@/shared/lib";
 
+export const IMMERSIVE_SLEEVES = ["none", "cd", "vinyl"] as const;
+export type ImmersiveSleeve = (typeof IMMERSIVE_SLEEVES)[number];
+
 export interface CustomizationState {
   coverGlow: boolean;
   setCoverGlow: (enabled: boolean) => void;
+  immersiveSleeve: ImmersiveSleeve;
+  setImmersiveSleeve: (sleeve: ImmersiveSleeve) => void;
 }
 
 export const useCustomizationStore = create<CustomizationState>()(
@@ -14,11 +19,31 @@ export const useCustomizationStore = create<CustomizationState>()(
     (set) => ({
       coverGlow: true,
       setCoverGlow: (enabled) => set({ coverGlow: enabled }),
+      immersiveSleeve: "none",
+      setImmersiveSleeve: (immersiveSleeve) => set({ immersiveSleeve }),
     }),
     {
       name: "liner_customization_v1",
       storage: createJSONStorage(() => debouncedStorage),
-      partialize: (state) => ({ coverGlow: state.coverGlow }),
+      partialize: (state) => ({
+        coverGlow: state.coverGlow,
+        immersiveSleeve: state.immersiveSleeve,
+      }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<CustomizationState> | null;
+        const sleeve = saved?.immersiveSleeve;
+        return {
+          ...current,
+          coverGlow:
+            typeof saved?.coverGlow === "boolean"
+              ? saved.coverGlow
+              : current.coverGlow,
+          immersiveSleeve:
+            sleeve !== undefined && IMMERSIVE_SLEEVES.includes(sleeve)
+              ? sleeve
+              : "none",
+        };
+      },
     },
   ),
 );
