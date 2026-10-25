@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { FaLastfm } from "react-icons/fa";
 import {
   CloseLine,
   Search2Line,
@@ -57,7 +58,7 @@ const TAB_ICONS: Record<TabId, React.ComponentType<any>> = {
   Overlay: Widget5,
   Discord: DiscordFill,
   Youtube: YoutubeFill,
-  Lastfm: Book2,
+  Lastfm: FaLastfm,
   Appearance: Palette,
   Storage: Database,
   About: InfoCircle,
