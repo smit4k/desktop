@@ -220,6 +220,7 @@ export default function DropdownMenu({
                 disabled={item.disabled}
                 onClick={async (e) => {
                   e.stopPropagation();
+                  keyboardOpenRef.current = false;
                   setOpen(false);
                   containerRef.current
                     ?.querySelector<HTMLButtonElement>("button")
