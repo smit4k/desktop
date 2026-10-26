@@ -5,6 +5,7 @@ export {
   type WordData,
 } from "./engine/lyricsParser";
 export { braccatoThemeCss } from "./engine/braccatoTheme";
+export { decorateLyricsLines } from "./engine/lyricsAnnotations";
 export {
   useLyricsStore,
   hasSyncedLyricsSources,
