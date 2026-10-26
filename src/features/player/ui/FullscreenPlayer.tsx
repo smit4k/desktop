@@ -528,7 +528,7 @@ export function FullscreenPlayer({
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
           {hasLyrics && (
-            <div className="absolute top-[6px] left-0 right-0 z-30 pointer-events-none flex flex-wrap items-start justify-center gap-2 px-2">
+            <div className="relative z-30 shrink-0 pointer-events-none flex flex-wrap items-start justify-center gap-2 py-[6px] pl-2 pr-[104px]">
               {availableProviders.length > 0 && <LyricsProviderIsland />}
               <LyricsPronunciationToggle />
             </div>
