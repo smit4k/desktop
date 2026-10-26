@@ -1,4 +1,13 @@
-import { useCallback, useEffect, createElement, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  createElement,
+  useRef,
+  useState,
+} from "react";
+import type { Lyric } from "@braccato/parsers";
+import type { BraccatoLyricsElement } from "@braccato/core/element";
 import { useNavigate } from "react-router-dom";
 import { shouldReleaseTopPin, startsPinnedToTop } from "./lyricsTopPin";
 import { usePlayerState } from "../hooks/usePlayerState";
@@ -7,7 +16,9 @@ import {
   useLyricsStore,
   LyricsProviderIsland,
   braccatoThemeCss,
+  LyricsLanguageMenu,
 } from "@/features/lyrics";
+import { decorateLyricsLines } from "@/features/lyrics/engine/lyricsAnnotations";
 import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
@@ -23,18 +34,38 @@ const BRACCATO_TAG = "braccato-lyrics";
 const KAWARP_FADE_IN_MS = 600;
 
 interface BraccatoLyricsViewProps {
-  lyrics: any[];
+  lyrics: Lyric[];
 }
 
 function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   const player = usePlayerState();
-  const elementRef = useRef<any>(null);
+  const elementRef = useRef<BraccatoLyricsElement | null>(null);
   const latestLyricsRef = useRef(lyrics);
+  const showTranslation = useLyricsStore((s) => s.showTranslation);
+  const showPronunciation = useLyricsStore((s) => s.showPronunciation);
   const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWheelTimeRef = useRef(0);
   const isInFreeSearchRef = useRef(false);
   const waitingForAudioAfterClickRef = useRef(false);
   const pinnedToTopRef = useRef(startsPinnedToTop(player.status, player.positionMs));
+
+  const updateAnnotations = useCallback(() => {
+    const element = elementRef.current;
+    const renderer = element?.renderer;
+    if (!element || !renderer) return;
+    decorateLyricsLines(
+      renderer,
+      latestLyricsRef.current,
+      useLyricsStore.getState(),
+    );
+    renderer.relayout();
+    renderer.retickFromPlaybackClock((eventCreationTime, isPlaying) => ({
+      ...element.tickOptions,
+      eventCreationTime,
+      isPlaying,
+      playbackRate: element.mediaElement?.playbackRate ?? 1,
+    }));
+  }, []);
 
   const scrollToActiveLine = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -124,11 +155,9 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   handleUserInteractionRef.current = handleUserInteraction;
 
   const setElement = useCallback(
-    (el: any) => {
+    (el: BraccatoLyricsElement | null) => {
       elementRef.current = el;
       if (!el) return;
-      el.theme = braccatoThemeCss;
-      el.lyrics = latestLyricsRef.current;
       el.source = "#liner-audio";
 
       const handleBraccatoLineClick = (e: Event) => {
@@ -169,7 +198,12 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       };
 
       const onLyricsLoaded = () => {
-        if (waitingForAudioAfterClickRef.current) return;
+        updateAnnotations();
+        if (
+          waitingForAudioAfterClickRef.current ||
+          pinnedToTopRef.current ||
+          isInFreeSearchRef.current
+        ) return;
         requestAnimationFrame(() => {
           if (!waitingForAudioAfterClickRef.current) {
             scrollToActiveLine("auto");
@@ -223,6 +257,9 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
         capture: true,
       });
 
+      el.theme = braccatoThemeCss;
+      el.lyrics = latestLyricsRef.current;
+
       return () => {
         cancelAnimationFrame(syncRafId);
         useLyricsStore.getState().setActiveLineIndex(null);
@@ -237,7 +274,7 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
         elementRef.current = null;
       };
     },
-    [scrollToActiveLine],
+    [scrollToActiveLine, updateAnnotations],
   );
 
   useEffect(() => {
@@ -245,6 +282,24 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     const element = elementRef.current;
     if (element) element.lyrics = lyrics;
   }, [lyrics]);
+
+  useLayoutEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+    const top = element.getBoundingClientRect().top;
+    const anchor = isInFreeSearchRef.current
+      ? element.renderer?.lines.find(
+          (line) => line.lyricElement.getBoundingClientRect().bottom > top,
+        )?.lyricElement
+      : null;
+    const anchorTop = anchor?.getBoundingClientRect().top ?? 0;
+    updateAnnotations();
+    if (anchor) {
+      element.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+    } else if (!pinnedToTopRef.current && !waitingForAudioAfterClickRef.current) {
+      scrollToActiveLine("auto");
+    }
+  }, [showTranslation, showPronunciation, updateAnnotations, scrollToActiveLine]);
 
   useEffect(() => {
     if (
@@ -371,7 +426,6 @@ export function FullscreenPlayer({
     currentTrackId && currentLyricsTrackId === currentTrackId,
   );
   const hasLyrics = isMatchingTrack && braccatoLyrics.length > 0;
-  const showProviderIsland = hasLyrics && availableProviders.length > 0;
   const isInstrumental =
     isMatchingTrack &&
     !lyricsLoading &&
@@ -413,9 +467,10 @@ export function FullscreenPlayer({
         </div>
 
         <div className="flex-1 h-full min-h-0 pl-2 pr-6 flex flex-col relative">
-          {showProviderIsland && (
-            <div className="absolute top-[6px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center">
-              <LyricsProviderIsland />
+          {hasLyrics && (
+            <div className="absolute top-[6px] left-0 right-0 z-30 pointer-events-none flex flex-wrap items-start justify-center gap-2 px-2">
+              {availableProviders.length > 0 && <LyricsProviderIsland />}
+              <LyricsLanguageMenu />
             </div>
           )}
 

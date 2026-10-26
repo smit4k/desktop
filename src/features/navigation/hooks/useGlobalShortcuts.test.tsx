@@ -256,15 +256,15 @@ describe("useGlobalShortcuts", () => {
     expect(event.defaultPrevented).toBe(false);
   });
 
-  it("Space toggles playback even when a button happens to be focused", () => {
+  it("lets a focused button consume Space without toggling playback", () => {
     const button = document.createElement("button");
     document.body.appendChild(button);
 
     mounted = mount(baseOptions());
     const event = press("Space", {}, button);
 
-    expect(playerEngine.togglePlayPause).toHaveBeenCalledTimes(1);
-    expect(event.defaultPrevented).toBe(true);
+    expect(playerEngine.togglePlayPause).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("ignores shortcuts combined with Ctrl/Cmd/Alt so browser shortcuts keep working", () => {

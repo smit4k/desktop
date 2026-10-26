@@ -373,6 +373,12 @@
     "no_lyrics_found": "Görünüşe göre bu şarkının sözleri henüz bizde yok.",
     "close_fullscreen": "Tam ekrandan çık",
     "failed_load_lyrics": "Şarkı sözleri yüklenemedi.",
+    "lyric_languages": {
+      "label": "Şarkı sözü dilleri",
+      "translation": "İngilizce çeviri",
+      "pronunciation": "Telaffuz",
+      "unavailable": "Bu kaynak için kullanılamıyor"
+    },
     "lyrics_offset": "Söz kaydırma",
     "earlier": "Daha erken",
     "later": "Daha geç",

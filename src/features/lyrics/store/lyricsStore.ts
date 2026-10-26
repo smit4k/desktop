@@ -69,6 +69,8 @@ export interface LyricsState {
   offsetMs: number;
   trackOffsets: Record<string, number>;
   activeLineIndex: number | null;
+  showTranslation: boolean;
+  showPronunciation: boolean;
 
   setLyricsState: (
     state: Partial<
@@ -81,10 +83,14 @@ export interface LyricsState {
         | "adjustOffset"
         | "resetOffset"
         | "setActiveLineIndex"
+        | "setShowTranslation"
+        | "setShowPronunciation"
       >
     >,
   ) => void;
   setActiveLineIndex: (index: number | null) => void;
+  setShowTranslation: (show: boolean) => void;
+  setShowPronunciation: (show: boolean) => void;
   selectProvider: (providerName: string) => void;
   setOffset: (offsetMs: number) => void;
   adjustOffset: (deltaMs: number) => void;
@@ -113,6 +119,11 @@ export const useLyricsStore = create<LyricsState>()(
       offsetMs: 0,
       trackOffsets: {},
       activeLineIndex: null,
+      showTranslation: false,
+      showPronunciation: false,
+
+      setShowTranslation: (showTranslation) => set({ showTranslation }),
+      setShowPronunciation: (showPronunciation) => set({ showPronunciation }),
 
       setActiveLineIndex: (index) => {
         if (get().activeLineIndex === index) return;
@@ -282,6 +293,8 @@ export const useLyricsStore = create<LyricsState>()(
       partialize: (state) => ({
         currentLyricsTrackId: state.currentLyricsTrackId,
         trackOffsets: state.trackOffsets,
+        showTranslation: state.showTranslation,
+        showPronunciation: state.showPronunciation,
       }),
     },
   ),
