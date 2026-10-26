@@ -5,6 +5,7 @@ import { api, mediaUrl, toMaxQualityAvatarUrl } from "@/shared/api";
 import { getAuthSession } from "@/shared/api/auth-session";
 import type { DiscordRpcStatePayload } from "../contracts";
 import { useDiscordSettingsStore } from "../store/discordSettingsStore";
+import { isLocalTrackId } from "@/shared/media/local";
 
 const artistAvatarCache = new Map<string, string | null>();
 const pendingArtistAvatars = new Map<string, Promise<string | null>>();
@@ -29,11 +30,15 @@ export function useDiscordSync() {
   const player = usePlayerState();
   const currentTrack = player.currentTrack;
   const effectiveCover = useCoverSrc(currentTrack?.coverUrl);
-  const [loadedAvatar, setLoadedAvatar] = useState<{ artistId: string; url: string | null } | null>(null);
+  const [loadedAvatar, setLoadedAvatar] = useState<{
+    artistId: string;
+    url: string | null;
+  } | null>(null);
 
   const primaryArtistId =
     currentTrack?.artistId ||
-    (Array.isArray(currentTrack?.artistList) && currentTrack.artistList.length > 0
+    (Array.isArray(currentTrack?.artistList) &&
+    currentTrack.artistList.length > 0
       ? currentTrack.artistList[0]?.id
       : undefined);
 
@@ -72,7 +77,12 @@ export function useDiscordSync() {
   }, []);
 
   useEffect(() => {
-    if (!primaryArtistId || primaryArtistId === "unknown" || artistAvatarCache.has(primaryArtistId)) return;
+    if (
+      !primaryArtistId ||
+      primaryArtistId === "unknown" ||
+      artistAvatarCache.has(primaryArtistId)
+    )
+      return;
     let active = true;
     void loadArtistAvatar(primaryArtistId).then((url) => {
       if (active) setLoadedAvatar({ artistId: primaryArtistId, url });
@@ -84,7 +94,9 @@ export function useDiscordSync() {
 
   const artistAvatar =
     (primaryArtistId &&
-      (loadedAvatar?.artistId === primaryArtistId ? loadedAvatar.url : artistAvatarCache.get(primaryArtistId))) ||
+      (loadedAvatar?.artistId === primaryArtistId
+        ? loadedAvatar.url
+        : artistAvatarCache.get(primaryArtistId))) ||
     undefined;
 
   // Track position prediction for seek detection
@@ -129,7 +141,13 @@ export function useDiscordSync() {
     }
 
     // Only send IPC if there's a meaningful change (prevents rate-limiting Discord RPC)
-    if (!trackChanged && !statusChanged && !avatarChanged && !coverChanged && !seeked) {
+    if (
+      !trackChanged &&
+      !statusChanged &&
+      !avatarChanged &&
+      !coverChanged &&
+      !seeked
+    ) {
       return;
     }
 
@@ -143,9 +161,15 @@ export function useDiscordSync() {
     };
 
     const artistName =
-      (currentTrack?.artists && typeof currentTrack.artists === "string" ? currentTrack.artists : "") ||
-      ((currentTrack as any)?.artist && typeof (currentTrack as any).artist === "string" ? (currentTrack as any).artist : "") ||
-      (Array.isArray(currentTrack?.artistList) && currentTrack.artistList.length > 0
+      (currentTrack?.artists && typeof currentTrack.artists === "string"
+        ? currentTrack.artists
+        : "") ||
+      ((currentTrack as any)?.artist &&
+      typeof (currentTrack as any).artist === "string"
+        ? (currentTrack as any).artist
+        : "") ||
+      (Array.isArray(currentTrack?.artistList) &&
+      currentTrack.artistList.length > 0
         ? currentTrack.artistList
             .map((a: any) => (typeof a === "string" ? a : a?.name))
             .filter(Boolean)
@@ -157,7 +181,7 @@ export function useDiscordSync() {
       status: player.status,
       track: currentTrack
         ? {
-            id: currentTrack.id,
+            id: isLocalTrackId(currentTrack.id) ? "" : currentTrack.id,
             title: currentTrack.title,
             artist: artistName,
             artistId: primaryArtistId,

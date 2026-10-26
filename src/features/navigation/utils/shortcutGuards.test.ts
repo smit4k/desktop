@@ -36,13 +36,21 @@ describe("isTypingTarget", () => {
 
 describe("hasBlockingModifier", () => {
   it("flags ctrl, meta and alt", () => {
-    expect(hasBlockingModifier({ ctrlKey: true, metaKey: false, altKey: false })).toBe(true);
-    expect(hasBlockingModifier({ ctrlKey: false, metaKey: true, altKey: false })).toBe(true);
-    expect(hasBlockingModifier({ ctrlKey: false, metaKey: false, altKey: true })).toBe(true);
+    expect(
+      hasBlockingModifier({ ctrlKey: true, metaKey: false, altKey: false }),
+    ).toBe(true);
+    expect(
+      hasBlockingModifier({ ctrlKey: false, metaKey: true, altKey: false }),
+    ).toBe(true);
+    expect(
+      hasBlockingModifier({ ctrlKey: false, metaKey: false, altKey: true }),
+    ).toBe(true);
   });
 
   it("is false with no modifiers (shift alone is not blocking)", () => {
-    expect(hasBlockingModifier({ ctrlKey: false, metaKey: false, altKey: false })).toBe(false);
+    expect(
+      hasBlockingModifier({ ctrlKey: false, metaKey: false, altKey: false }),
+    ).toBe(false);
   });
 });
 
@@ -68,7 +76,9 @@ describe("isBlockingOverlayOpen", () => {
 
 describe("isKeyHandledByFocusedControl", () => {
   it("Space yields to buttons but remains a playback shortcut on links", () => {
-    expect(isKeyHandledByFocusedControl(document.createElement("button"), "Space")).toBe(true);
+    expect(
+      isKeyHandledByFocusedControl(document.createElement("button"), "Space"),
+    ).toBe(true);
 
     const link = document.createElement("a");
     link.setAttribute("href", "#");
@@ -86,7 +96,9 @@ describe("isKeyHandledByFocusedControl", () => {
   });
 
   it("Space does not yield to a plain div with no interactive role", () => {
-    expect(isKeyHandledByFocusedControl(document.createElement("div"), "Space")).toBe(false);
+    expect(
+      isKeyHandledByFocusedControl(document.createElement("div"), "Space"),
+    ).toBe(false);
   });
 
   it("arrow keys yield to a slider, a range input, and a select", () => {
@@ -101,15 +113,24 @@ describe("isKeyHandledByFocusedControl", () => {
     range.type = "range";
     expect(isKeyHandledByFocusedControl(range, "ArrowUp")).toBe(true);
 
-    expect(isKeyHandledByFocusedControl(document.createElement("select"), "ArrowDown")).toBe(true);
+    expect(
+      isKeyHandledByFocusedControl(
+        document.createElement("select"),
+        "ArrowDown",
+      ),
+    ).toBe(true);
   });
 
   it("arrow keys do not yield to an unrelated focused element", () => {
-    expect(isKeyHandledByFocusedControl(document.createElement("div"), "ArrowUp")).toBe(false);
+    expect(
+      isKeyHandledByFocusedControl(document.createElement("div"), "ArrowUp"),
+    ).toBe(false);
   });
 
   it("returns false for keys it doesn't know about (e.g. KeyF)", () => {
-    expect(isKeyHandledByFocusedControl(document.createElement("button"), "KeyF")).toBe(false);
+    expect(
+      isKeyHandledByFocusedControl(document.createElement("button"), "KeyF"),
+    ).toBe(false);
   });
 
   it("returns false for non-element targets", () => {

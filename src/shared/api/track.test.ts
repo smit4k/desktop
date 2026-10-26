@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { toClientTrack } from "./track";
 
 describe("toClientTrack", () => {
@@ -12,12 +12,16 @@ describe("toClientTrack", () => {
     };
     const c1 = toClientTrack(backend);
     expect(c1.artistId).toBe("UCECJhbsxgI5hWFz8EU0TY-g");
-    expect(c1.artistList).toEqual([{ id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" }]);
+    expect(c1.artistList).toEqual([
+      { id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" },
+    ]);
     expect(c1.artists).toBe("Drake");
 
     const c2 = toClientTrack(c1);
     expect(c2.artistId).toBe("UCECJhbsxgI5hWFz8EU0TY-g");
-    expect(c2.artistList).toEqual([{ id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" }]);
+    expect(c2.artistList).toEqual([
+      { id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" },
+    ]);
     expect(c2.artists).toBe("Drake");
   });
 
@@ -53,10 +57,10 @@ describe("toClientTrack", () => {
     expect(t.album).toEqual({ id: "alb1", title: "Abbey Road" });
   });
 
-
   it("renders ArtistLink and tests click behavior", async () => {
     const { createRoot } = await import("react-dom/client");
-    const { default: ArtistLink } = await import("../../features/artist/ui/ArtistLink");
+    const { default: ArtistLink } =
+      await import("../../features/artist/ui/ArtistLink");
     const { MemoryRouter } = await import("react-router-dom");
     const { act } = await import("react");
 
@@ -81,8 +85,8 @@ describe("toClientTrack", () => {
             name: "Drake",
             artistId: "UCECJhbsxgI5hWFz8EU0TY-g",
             artistList: [{ id: "UCECJhbsxgI5hWFz8EU0TY-g", name: "Drake" }],
-          })
-        )
+          }),
+        ),
       );
     });
 
@@ -105,7 +109,8 @@ describe("toClientTrack", () => {
 
   it("navigates with artist name when artistId is absent", async () => {
     const { createRoot } = await import("react-dom/client");
-    const { default: ArtistLink } = await import("../../features/artist/ui/ArtistLink");
+    const { default: ArtistLink } =
+      await import("../../features/artist/ui/ArtistLink");
     const { MemoryRouter } = await import("react-router-dom");
     const { act } = await import("react");
 
@@ -128,8 +133,8 @@ describe("toClientTrack", () => {
           React.createElement(LocationProbe, null),
           React.createElement(ArtistLink, {
             name: "The Beatles",
-          })
-        )
+          }),
+        ),
       );
     });
 
@@ -149,4 +154,3 @@ describe("toClientTrack", () => {
     document.body.removeChild(container);
   });
 });
-

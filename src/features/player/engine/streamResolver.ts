@@ -11,6 +11,7 @@ import {
   toSoundCloudTrackId,
 } from "@/shared/media/soundcloud";
 import { resolveLinerStream } from "@/shared/media/liner/linerPlayback";
+import { isLocalTrackId, localTrackAudioUrl } from "@/shared/media/local";
 import { isAbortError } from "@/shared/utils/abort";
 import { log } from "@/shared/utils/logger";
 import {
@@ -23,6 +24,7 @@ import {
   type PlaybackStream,
 } from "./playbackStream";
 import { findYoutubeStandIn } from "./youtubeStandIn";
+import { findExactSongVersion } from "./exactSongVersion";
 
 export interface ResolveStreamOptions {
   progressive?: boolean;
@@ -109,10 +111,20 @@ async function resolveSoundCloud(
 
 async function resolveYoutubeTrack(
   track: PlayableTrack,
-  videoId: string,
+  rowVideoId: string,
   progressive: boolean,
   signal?: AbortSignal,
 ): Promise<PlaybackStream> {
+  const songId = track.audioVariant
+    ? await findExactSongVersion(track, rowVideoId, signal)
+    : null;
+  if (songId)
+    log(
+      "cyan",
+      "playback",
+      `album row ${rowVideoId} is a ${track.audioVariant}, playing the song ${songId}`,
+    );
+  const videoId = songId ?? rowVideoId;
   const liner = await resolveLinerStream(videoId, signal);
   if (liner) {
     log("cyan", "playback", `playing liner audio (r2) for "${track.title}"`);
@@ -127,6 +139,14 @@ export async function resolvePlaybackStream(
   options: ResolveStreamOptions = {},
 ): Promise<PlaybackStream> {
   const progressive = options.progressive ?? false;
+  if (isLocalTrackId(track.id))
+    return {
+      url: localTrackAudioUrl(track.id),
+      expiresAtMs: null,
+      mimeType: "",
+      codec: "local",
+      bitrate: 0,
+    };
   if (toSoundCloudTrackId(track.id))
     return resolveSoundCloud(track, progressive, signal);
   const videoId = toVideoId(track.id);

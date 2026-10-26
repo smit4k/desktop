@@ -33,7 +33,6 @@ import {
   PlayFill,
   More1Fill,
   PlaylistFill,
-  PlaylistLine,
   MusicLine,
   CheckLine,
   ShareForwardLine,
@@ -138,11 +137,9 @@ function LibraryPlaylistContent() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
 
-  const {
-    data: playlistDetail,
-    isLoading: playlistLoading,
-    error: playlistError,
-  } = usePlaylist(isLikesMode ? null : decodedId);
+  const { data: playlistDetail, isLoading: playlistLoading } = usePlaylist(
+    isLikesMode ? null : decodedId,
+  );
 
   const { data: likesData, isLoading: likesLoading } = useLikedTracks(
     isLikesMode ? { limit: 1000, offset: 0 } : undefined,
@@ -178,6 +175,7 @@ function LibraryPlaylistContent() {
         playlistDetail.coverUrls ??
         (playlistDetail.coverUrl ? [playlistDetail.coverUrl] : []),
       tracks: playlistDetail.tracks,
+      durationMs: playlistDetail.durationMs,
       revision: playlistDetail.revision,
     };
   })();
@@ -345,10 +343,20 @@ function LibraryPlaylistContent() {
   });
 
   const [listScrollMargin, setListScrollMargin] = useState(0);
+  const listShown =
+    currentTracks.length > 0 &&
+    !(search.matches && search.matches.length === 0);
   useLayoutEffect(() => {
-    const el = trackListContainerRef.current;
-    if (el) setListScrollMargin(el.offsetTop);
-  });
+    const list = trackListContainerRef.current;
+    const hero = scrollRef.current?.firstElementChild;
+    if (!list) return;
+    const measure = () => setListScrollMargin(list.offsetTop);
+    measure();
+    if (!hero || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, [listShown, viewData]);
 
   const rowVirtualizer = useVirtualizer({
     scrollMargin: listScrollMargin,
@@ -460,7 +468,10 @@ function LibraryPlaylistContent() {
               className="relative z-10 flex flex-col h-full w-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain box-border pt-(--page-inset-top) pb-(--page-inset-bottom)"
               style={{ willChange: "scroll-position" }}
             >
-              <div className="shrink-0 pl-[16px] pr-[12px] pt-[8px]" data-no-window-drag>
+              <div
+                className="shrink-0 pl-[16px] pr-[12px] pt-[8px]"
+                data-no-window-drag
+              >
                 <EntityHero
                   cover={(() => {
                     const urls =
@@ -631,10 +642,12 @@ function LibraryPlaylistContent() {
                         />
                         <span>
                           {(() => {
-                            const totalMs = viewData.tracks.reduce(
-                              (acc, t) => acc + (t.durationMs || 0),
-                              0,
-                            );
+                            const totalMs =
+                              viewData.durationMs ??
+                              viewData.tracks.reduce(
+                                (acc, t) => acc + (t.durationMs || 0),
+                                0,
+                              );
                             const totalMins = Math.floor(totalMs / 60000);
                             if (totalMins > 60) {
                               return `${Math.floor(totalMins / 60)} ${t("playlist.hr")} ${totalMins % 60} ${t("playlist.min")}`;

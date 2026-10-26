@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
-import {
-  lyricsCache,
-  shouldCacheLyricsCandidate,
-  compareLyricsCandidates,
-  isBetterLyricsCandidate,
-} from "./index";
+import { lyricsCache, shouldCacheLyricsCandidate } from "./index";
 import type { LyricsCandidate } from "@/shared/contracts/lyrics";
 
 function makeCandidate(
@@ -72,39 +67,84 @@ describe("lyricsCache advanced caching logic", () => {
 
   describe("provider word-level validation (shouldCacheLyricsCandidate)", () => {
     it("allows word_level and syllable_level for cadence, polaris, polaris mono", () => {
-      expect(shouldCacheLyricsCandidate(makeCandidate("cadence", "word_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("Cadence", "syllable_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("polaris", "word_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("Polaris Mono", "word_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("polaris_mono", "syllable_level"))).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("cadence", "word_level")),
+      ).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("Cadence", "syllable_level")),
+      ).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("polaris", "word_level")),
+      ).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("Polaris Mono", "word_level")),
+      ).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(
+          makeCandidate("polaris_mono", "syllable_level"),
+        ),
+      ).toBe(true);
     });
 
     it("rejects plain and line_level for cadence, polaris, polaris mono", () => {
-      expect(shouldCacheLyricsCandidate(makeCandidate("cadence", "line_level"))).toBe(false);
-      expect(shouldCacheLyricsCandidate(makeCandidate("cadence", "plain"))).toBe(false);
-      expect(shouldCacheLyricsCandidate(makeCandidate("Polaris", "line_level"))).toBe(false);
-      expect(shouldCacheLyricsCandidate(makeCandidate("polaris mono", "line_level"))).toBe(false);
-      expect(shouldCacheLyricsCandidate(makeCandidate("polaris-mono", "plain"))).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("cadence", "line_level")),
+      ).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("cadence", "plain")),
+      ).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("Polaris", "line_level")),
+      ).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("polaris mono", "line_level")),
+      ).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("polaris-mono", "plain")),
+      ).toBe(false);
     });
 
     it("allows any sync level for other providers (e.g. lrclib, kugou, musixmatch, netease)", () => {
-      expect(shouldCacheLyricsCandidate(makeCandidate("lrclib", "line_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("lrclib", "plain"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("kugou", "line_level"))).toBe(true);
-      expect(shouldCacheLyricsCandidate(makeCandidate("musixmatch", "plain"))).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("lrclib", "line_level")),
+      ).toBe(true);
+      expect(shouldCacheLyricsCandidate(makeCandidate("lrclib", "plain"))).toBe(
+        true,
+      );
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("kugou", "line_level")),
+      ).toBe(true);
+      expect(
+        shouldCacheLyricsCandidate(makeCandidate("musixmatch", "plain")),
+      ).toBe(true);
     });
 
     it("rejects empty/invalid candidates", () => {
       expect(shouldCacheLyricsCandidate(null)).toBe(false);
       expect(shouldCacheLyricsCandidate(undefined)).toBe(false);
-      expect(shouldCacheLyricsCandidate({ ...makeCandidate("lrclib", "line_level"), lyrics: { format: "lrc", content: "" } })).toBe(false);
+      expect(
+        shouldCacheLyricsCandidate({
+          ...makeCandidate("lrclib", "line_level"),
+          lyrics: { format: "lrc", content: "" },
+        }),
+      ).toBe(false);
     });
   });
 
   describe("per-provider caching", () => {
     it("caches multiple providers individually for the same track", () => {
-      const lrclibCandidate = makeCandidate("lrclib", "line_level", 70, "[00:01.00] lrclib line");
-      const kugouCandidate = makeCandidate("kugou", "word_level", 90, "[00:01.00] kugou word");
+      const lrclibCandidate = makeCandidate(
+        "lrclib",
+        "line_level",
+        70,
+        "[00:01.00] lrclib line",
+      );
+      const kugouCandidate = makeCandidate(
+        "kugou",
+        "word_level",
+        90,
+        "[00:01.00] kugou word",
+      );
 
       lyricsCache.setProvider("track_1", lrclibCandidate);
       expect(lyricsCache.has("track_1")).toBe(true);
@@ -145,15 +185,32 @@ describe("lyricsCache advanced caching logic", () => {
       const cadenceLine = makeCandidate("cadence", "line_level", 60);
 
       lyricsCache.set("track_3", lrclib, [
-        { provider: "lrclib", syncLevel: "line_level", quality: 65, candidate: lrclib },
-        { provider: "cadence", syncLevel: "word_level", quality: 92, candidate: cadenceWord },
-        { provider: "cadence_line", syncLevel: "line_level", quality: 60, candidate: cadenceLine },
+        {
+          provider: "lrclib",
+          syncLevel: "line_level",
+          quality: 65,
+          candidate: lrclib,
+        },
+        {
+          provider: "cadence",
+          syncLevel: "word_level",
+          quality: 92,
+          candidate: cadenceWord,
+        },
+        {
+          provider: "cadence_line",
+          syncLevel: "line_level",
+          quality: 60,
+          candidate: cadenceLine,
+        },
       ]);
 
       expect(lyricsCache.has("track_3", "lrclib")).toBe(true);
       expect(lyricsCache.has("track_3", "cadence")).toBe(true);
       // cadence_line with line_level should not be cached
-      expect(lyricsCache.getProvider("track_3", "cadence")?.syncLevel).toBe("word_level");
+      expect(lyricsCache.getProvider("track_3", "cadence")?.syncLevel).toBe(
+        "word_level",
+      );
     });
   });
 });

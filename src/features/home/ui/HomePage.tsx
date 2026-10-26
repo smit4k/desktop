@@ -10,8 +10,7 @@ import { useDailyMixes } from "../hooks/useDailyMixes";
 import { useMostSaved, usePopularAlbums } from "../hooks/useExploreCollections";
 import { useTranslation } from "@/languages";
 import { usePageBackdrop } from "@/shared/lib";
-import { useStrikingCover } from "../hooks/useStrikingCover";
-import { useAccentBackdrop } from "../hooks/useAccentBackdrop";
+import { useHomeBackdrop } from "../hooks/useHomeBackdrop";
 import {
   AlbumFill,
   BookmarkFill,
@@ -30,23 +29,22 @@ export default function HomePage() {
     useRecentlyPlayed(20);
   const { items: popularAlbums, isLoading: albumsLoading } = usePopularAlbums();
   const { items: mostSaved, isLoading: savedLoading } = useMostSaved();
-  const { data: dailyMixes } = useDailyMixes();
-  const hasMixes = Boolean(dailyMixes && dailyMixes.length > 0);
+  const { data: dailyMixes, isLoading: mixesLoading } = useDailyMixes();
+  const hasMixes = dailyMixes.length > 0;
   const firstAlbum = popularAlbums[0];
   const firstAlbumCover =
     firstAlbum?.type === "album" ? firstAlbum.item.coverUrl : undefined;
-  const mixBackdropCover = useStrikingCover(
-    (dailyMixes ?? []).slice(0, 4).map((mix) => mix.coverUrl),
-  );
-  const mixAccentBackdrop = useAccentBackdrop(mixBackdropCover);
+  const homeBackdrop = useHomeBackdrop(dailyMixes);
+  const usesMixBackdrop = hasMixes || mixesLoading;
   usePageBackdrop(
-    hasMixes
-      ? mixAccentBackdrop
+    usesMixBackdrop
+      ? homeBackdrop.backdrop
       : firstAlbumCover || listeningNow[0]?.coverUrl || undefined,
-    hasMixes ? { blur: 56, dim: 0.22 } : undefined,
+    usesMixBackdrop ? { blur: 56, dim: 0.22 } : undefined,
   );
 
   const isDataLoading =
+    mixesLoading ||
     tracksLoading ||
     allTimeLoading ||
     recentLoading ||
@@ -70,11 +68,11 @@ export default function HomePage() {
       <div className="relative z-1 grid grid-cols-1 items-start w-full">
         {isReady && (
           <div className="col-start-1 row-start-1 w-full pb-[16px]">
-            {dailyMixes && hasMixes && (
+            {hasMixes && (
               <DailyMixesSection
                 mixes={dailyMixes}
                 headingMarginTop="mt-0"
-                accentCoverUrl={mixBackdropCover}
+                accentCoverUrl={homeBackdrop.cover}
               />
             )}
 
@@ -124,7 +122,6 @@ export default function HomePage() {
                 headingMarginTop="mt-[22px]"
               />
             )}
-
           </div>
         )}
 

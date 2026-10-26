@@ -64,6 +64,9 @@
     "coming_soon": "Yakında",
     "play_all": "Tümünü çal",
     "add_to_queue": "Sıraya ekle",
+    "remove_from_queue": "Sıradan kaldır",
+    "removed_from_queue": "Sıradan kaldırıldı",
+    "undo": "Geri al",
     "shuffle": "Karıştır",
     "remove_from_library": "Kitaplıktan kaldır",
     "save_to_library": "Kitaplığa kaydet",
@@ -385,6 +388,8 @@
     "track_unavailable": "\"{title}\" kullanılamıyor, atlanıyor...",
     "track_unavailable_title": "Parça kullanılamıyor",
     "playback_stopped_too_many_errors": "Çalma durduruldu: çok fazla parça yüklenemedi.",
+    "youtube_refused_title": "YouTube bu bağlantıyı reddediyor",
+    "youtube_refused_description": "YouTube sesi bu ağda engelleniyor. VPN'i veya proxy'yi kapatın ya da başka bir bağlantı deneyin.",
     "speed_pitch": "Hız ve Perde",
     "speed": "Hız",
     "pitch": "Perde",
@@ -776,11 +781,6 @@
     },
     "connection": {
       "open_folder": "Kaydedilen konumu aç"
-    },
-    "cover_glow": {
-      "title": "Kapak parıltısı",
-      "description": "Sayfaların arkasında bulanık kapak parıltısı. Düz arka plan için kapatın.",
-      "disabled_for_light": "Açık temada kapalı."
     }
   },
   "toast": {
@@ -929,6 +929,7 @@
   "track_sort": {
     "label": "Sırala",
     "default": "Varsayılan",
+    "added": "Eklenme tarihine göre",
     "title": "Başlığa göre (A–Z)",
     "duration": "Süreye göre",
     "popularity": "Popülerliğe göre"

@@ -2,14 +2,12 @@ import { memo } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Radio,
   Sidebar,
   SkipNext,
   SkipPrevious,
   MaximizeSquare3,
-  TrashBin2,
-  Bookmark,
   PlaybackSpeed,
+  Tuning2,
   VolumeCross,
   VolumeSmall,
   VolumeLoud,
@@ -24,8 +22,6 @@ import { PlayerMorphIcon, ICON_PLAY, ICON_PAUSE } from "./morphPlayerIcons";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { playerEngine } from "../engine/playerEngine";
 import { isRadioContext, nextRepeatMode } from "../engine/radioMode";
-import Button from "@/shared/ui/Button";
-import SongCard from "./SongCard";
 import { useTranslation } from "@/languages";
 import {
   useIsTrackLiked,
@@ -36,11 +32,14 @@ import { usePlayerStore } from "../store/playerStore";
 import { toVolumeGain, toVolumeLevel } from "../engine/volume";
 import { VolumeColumn } from "./VolumeColumn";
 import { SpeedPitchPicker } from "./SpeedPitchPicker";
+import { EqualizerPicker } from "./EqualizerPicker";
+import { isEqActive } from "../engine/equalizer";
 import { TimelineSlider } from "./TimelineSlider";
 import { useTheme } from "next-themes";
 import { useCoverReady, CoverImage } from "@/features/covers";
 import { useHasPageBackdrop } from "@/features/settings/store/customizationStore";
 import { ArtistLink } from "@/features/artist";
+import { isLocalTrackId } from "@/shared/media/local";
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
@@ -225,39 +224,8 @@ function MiniPlayer({
   const [accentColorSolid, setAccentColorSolid] = useState(
     isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)",
   );
-  const [contextAccentColorSolid, setContextAccentColorSolid] = useState(
-    isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)",
-  );
 
   const coverUrl = player.currentTrack?.coverUrl || "";
-
-  useEffect(() => {
-    if (!player.playbackContextCover) {
-      return;
-    }
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (!ctx) return;
-        canvas.width = 64;
-        canvas.height = 64;
-        ctx.drawImage(img, 0, 0, 64, 64);
-        const { accentColorSolid: acs } = extractColorsFromCanvas(
-          canvas,
-          isLight,
-        );
-        setContextAccentColorSolid(acs);
-      } catch {
-        setContextAccentColorSolid(
-          isLight ? "rgb(23, 23, 23)" : "rgb(255, 255, 255)",
-        );
-      }
-    };
-    img.src = player.playbackContextCover;
-  }, [player.playbackContextCover, isLight]);
 
   useEffect(() => {
     if (!coverUrl) {
@@ -314,7 +282,6 @@ function MiniPlayer({
     [isLight],
   );
 
-  const [queueLimit, setQueueLimit] = useState(50);
   const [volumeOpen, setVolumeOpen] = useState(false);
   const volumePinnedRef = useRef(false);
   const [volumePopupStyle, setVolumePopupStyle] = useState<React.CSSProperties>(
@@ -324,12 +291,15 @@ function MiniPlayer({
   const [speedPopupStyle, setSpeedPopupStyle] = useState<React.CSSProperties>(
     {},
   );
+  const [eqOpen, setEqOpen] = useState(false);
+  const [eqPopupStyle, setEqPopupStyle] = useState<React.CSSProperties>({});
   const miniPlayerRootRef = useRef<HTMLDivElement>(null);
-  const queuePopupRef = useRef<HTMLDivElement>(null);
   const volumePopupRef = useRef<HTMLDivElement>(null);
   const volumeToggleRef = useRef<HTMLButtonElement>(null);
   const speedPopupRef = useRef<HTMLDivElement>(null);
   const speedToggleRef = useRef<HTMLButtonElement>(null);
+  const eqPopupRef = useRef<HTMLDivElement>(null);
+  const eqToggleRef = useRef<HTMLButtonElement>(null);
   const volumeHoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -337,7 +307,9 @@ function MiniPlayer({
 
   const currentTrack = player.currentTrack;
   const volumeLevel = toVolumeLevel(player.volume);
+  const isLocal = isLocalTrackId(currentTrack?.id);
   const isLiked = useIsTrackLiked(currentTrack?.id);
+  const eqActive = isEqActive(player.isEqEnabled, player.eqGains);
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
   const togglingRef = useRef(false);
@@ -370,53 +342,6 @@ function MiniPlayer({
   const trackArtists = player.currentTrack?.artists ?? t("player.choose_track");
 
   const isCoverLoaded = useCoverReady(coverUrl);
-
-  const queueItems = useMemo(() => {
-    return player.queue.slice(0, queueLimit).map((item, index) => {
-      const isCurrent = index === player.currentIndex;
-      return (
-        <SongCard
-          key={`${item.id}-${index}`}
-          title={item.title}
-          artists={item.artists}
-          artistId={item.artistId}
-          artistList={item.artistList}
-          coverUrl={item.coverUrl || ""}
-          duration={
-            item.durationMs
-              ? `${Math.floor(item.durationMs / 60000)}:${Math.floor(
-                  (item.durationMs % 60000) / 1000,
-                )
-                  .toString()
-                  .padStart(2, "0")}`
-              : undefined
-          }
-          explicit={item.explicit}
-          onPlay={() => {
-            void playerEngine.playTrack(
-              item,
-              player.queue,
-              player.playbackContext,
-              player.playbackContextCover,
-              index,
-              true,
-            );
-          }}
-          className={`rounded-[12px] px-[8px] py-[10px] text-left transition-all duration-200 ${
-            isCurrent
-              ? "bg-black/[0.065] dark:bg-white/[0.08]"
-              : "bg-transparent hover:bg-black/[0.035] dark:hover:bg-white/[0.04]"
-          }`}
-        />
-      );
-    });
-  }, [
-    player.queue,
-    queueLimit,
-    player.currentIndex,
-    player.playbackContext,
-    player.playbackContextCover,
-  ]);
 
   // off -> all (loop the whole queue/playlist) -> one (loop the track) -> off
   const repeatIcon = useMemo(() => {
@@ -467,11 +392,11 @@ function MiniPlayer({
   }, []);
 
   const handleVolumeMouseEnter = useCallback(() => {
-    if (speedOpen) return;
+    if (speedOpen || eqOpen) return;
     clearVolumeHoverTimer();
     updateVolumePopupPosition();
     setVolumeOpen(true);
-  }, [clearVolumeHoverTimer, updateVolumePopupPosition, speedOpen]);
+  }, [clearVolumeHoverTimer, updateVolumePopupPosition, speedOpen, eqOpen]);
 
   const handleVolumeMouseLeave = useCallback(() => {
     clearVolumeHoverTimer();
@@ -517,18 +442,19 @@ function MiniPlayer({
     updateVolumePopupPosition();
   }, [volumeOpen, updateVolumePopupPosition]);
 
-  useEffect(() => {
-    if (!speedOpen) return;
-    const toggle = speedToggleRef.current;
+  // measured in the click handler, before the popup mounts: positioning it in an
+  // effect afterwards moved it on its first open, and framer flew the active
+  // preset / tab pills in from the unpositioned spot outside the card
+  const popupStyleFor = (toggle: HTMLElement | null): React.CSSProperties => {
     const root = miniPlayerRootRef.current;
-    if (!toggle || !root) return;
+    if (!toggle || !root) return {};
     const toggleRect = toggle.getBoundingClientRect();
     const rootRect = root.getBoundingClientRect();
     const popupW = 300;
     const btnW = toggleRect.width;
     const right = rootRect.right - toggleRect.right + (btnW - popupW) / 2;
-    setSpeedPopupStyle({ right: Math.max(8, right) });
-  }, [speedOpen]);
+    return { right: Math.max(8, right) };
+  };
 
   useEffect(() => {
     const onDocumentPointerDown = (event: MouseEvent) => {
@@ -553,6 +479,14 @@ function MiniPlayer({
           setSpeedOpen(false);
         }
       }
+
+      if (eqOpen) {
+        const clickedEqPopup = eqPopupRef.current?.contains(target);
+        const clickedEqToggle = eqToggleRef.current?.contains(target);
+        if (!clickedEqPopup && !clickedEqToggle) {
+          setEqOpen(false);
+        }
+      }
     };
 
     const onDocumentKeyDown = (event: KeyboardEvent) => {
@@ -568,6 +502,11 @@ function MiniPlayer({
           event.stopPropagation();
           setSpeedOpen(false);
         }
+        if (eqOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setEqOpen(false);
+        }
       }
     };
 
@@ -577,7 +516,7 @@ function MiniPlayer({
       document.removeEventListener("mousedown", onDocumentPointerDown, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
     };
-  }, [clearVolumeHoverTimer, speedOpen, volumeOpen]);
+  }, [clearVolumeHoverTimer, eqOpen, speedOpen, volumeOpen]);
 
   const [scrubRatio, setScrubRatio] = useState<number | null>(null);
   const activeProgress = scrubRatio !== null ? scrubRatio : progress;
@@ -623,6 +562,24 @@ function MiniPlayer({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <SpeedPitchPicker onClose={() => setSpeedOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {eqOpen && (
+          <motion.div
+            key="eq-popup"
+            ref={eqPopupRef}
+            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.985 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-[74px] z-[92] w-[300px] rounded-[14px] p-[16px] bg-black/[0.05] backdrop-blur-2xl backdrop-saturate-150 dark:bg-white/[0.07] prevent-seek"
+            style={eqPopupStyle}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <EqualizerPicker />
           </motion.div>
         )}
       </AnimatePresence>
@@ -802,24 +759,27 @@ function MiniPlayer({
                   name={trackArtists}
                   artistId={player.currentTrack?.artistId}
                   artistList={player.currentTrack?.artistList}
+                  plain={isLocal}
                   className="text-text-tertiary pointer-events-auto"
                 />
               </p>
             </div>
-            <button
-              type="button"
-              aria-label={isLiked ? "Unlike" : "Like"}
-              className={`${iconButtonClass} shrink-0 transition-colors duration-150 pointer-events-auto prevent-seek ${
-                isLiked
-                  ? "text-accent-primary"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={handleLikeToggle}
-              style={{ cursor: "pointer" }}
-            >
-              {isLiked ? <HeartFill size={20} /> : <HeartLine size={20} />}
-            </button>
+            {!isLocal && (
+              <button
+                type="button"
+                aria-label={isLiked ? "Unlike" : "Like"}
+                className={`${iconButtonClass} shrink-0 transition-colors duration-150 pointer-events-auto prevent-seek ${
+                  isLiked
+                    ? "text-accent-primary"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={handleLikeToggle}
+                style={{ cursor: "pointer" }}
+              >
+                {isLiked ? <HeartFill size={20} /> : <HeartLine size={20} />}
+              </button>
+            )}
           </div>
 
           <div
@@ -872,6 +832,35 @@ function MiniPlayer({
                 {repeatIcon}
               </button>
               <button
+                ref={eqToggleRef}
+                type="button"
+                aria-label={t("player.equalizer")}
+                title={t("player.equalizer")}
+                className={`${iconButtonClass} ${
+                  eqOpen || eqActive ? "bg-white/[0.09] text-white" : ""
+                }`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  setVolumeOpen(false);
+                  setSpeedOpen(false);
+                  onQueueOpenChange?.(false);
+                  if (!eqOpen)
+                    setEqPopupStyle(popupStyleFor(eqToggleRef.current));
+                  setEqOpen((prev) => !prev);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <motion.div
+                  animate={{
+                    scale: eqOpen ? 1.08 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                  className="flex items-center justify-center"
+                >
+                  <Tuning2 size={18} weight={eqActive ? "Bold" : "Outline"} />
+                </motion.div>
+              </button>
+              <button
                 ref={speedToggleRef}
                 type="button"
                 aria-label="Speed and Pitch"
@@ -887,7 +876,10 @@ function MiniPlayer({
                 onClick={() => {
                   clearVolumeHoverTimer();
                   setVolumeOpen(false);
+                  setEqOpen(false);
                   onQueueOpenChange?.(false);
+                  if (!speedOpen)
+                    setSpeedPopupStyle(popupStyleFor(speedToggleRef.current));
                   setSpeedOpen((prev) => !prev);
                 }}
                 style={{ cursor: "pointer" }}
@@ -931,6 +923,7 @@ function MiniPlayer({
                   volumePinnedRef.current = true;
                   updateVolumePopupPosition();
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   onQueueOpenChange?.(false);
                   setVolumeOpen(true);
                 }}
@@ -952,6 +945,7 @@ function MiniPlayer({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   setVolumeOpen(false);
                   onFullscreenOpen?.();
                 }}
@@ -970,8 +964,8 @@ function MiniPlayer({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => {
                   setSpeedOpen(false);
+                  setEqOpen(false);
                   setVolumeOpen(false);
-                  setQueueLimit(50);
                   onQueueToggle?.();
                 }}
                 style={{ cursor: "pointer" }}

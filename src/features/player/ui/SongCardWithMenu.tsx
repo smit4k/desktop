@@ -7,6 +7,7 @@ import { useToast } from "@/shared/ui";
 import { useTranslation } from "@/languages";
 
 import type { TrackArtist } from "@/shared/types";
+import { isLocalTrackId } from "@/shared/media/local";
 
 export interface SongCardWithMenuProps {
   id?: string;
@@ -37,6 +38,9 @@ export interface SongCardWithMenuProps {
   onGrabStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
   highlight?: string;
   trailingAction?: React.ReactNode;
+  /** play queue rows: adds "Remove from queue" to the card menu */
+  onRemoveFromQueue?: () => void;
+  onRemoveFromDevice?: () => void;
 }
 
 function SongCardWithMenu({
@@ -68,6 +72,8 @@ function SongCardWithMenu({
   onGrabStart,
   highlight,
   trailingAction,
+  onRemoveFromQueue,
+  onRemoveFromDevice,
 }: SongCardWithMenuProps) {
   const resolvedDurationMs = useMemo(() => {
     if (durationMs !== undefined) return durationMs;
@@ -94,6 +100,8 @@ function SongCardWithMenu({
     playlistId,
     playlistItemId,
     playlistTitle,
+    onRemoveFromQueue,
+    onRemoveFromDevice,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -161,6 +169,7 @@ function SongCardWithMenu({
       artists={artists}
       artistId={artistId}
       artistList={artistList}
+      artistsClickable={!isLocalTrackId(id)}
       coverUrl={coverUrl}
       className={className}
       onPlay={onPlay}

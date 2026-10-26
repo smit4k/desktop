@@ -8,7 +8,10 @@ import { VolumePicker } from "./VolumePicker";
 import { FullscreenTrackInfo } from "./FullscreenTrackInfo";
 import { FullscreenTimeline } from "./FullscreenTimeline";
 import { FullscreenTransportControls } from "./FullscreenTransportControls";
-import { BASE_COLUMN_WIDTH, fullscreenColumnScale } from "../lib/fullscreenScale";
+import {
+  BASE_COLUMN_WIDTH,
+  fullscreenColumnScale,
+} from "../lib/fullscreenScale";
 import { useWindowState } from "@/features/navigation/hooks/useWindowState";
 
 function useFullscreenColumnScale(): number {
@@ -20,7 +23,8 @@ function useFullscreenColumnScale(): number {
       setScale(1);
       return;
     }
-    const update = () => setScale(fullscreenColumnScale(window.innerWidth, window.innerHeight));
+    const update = () =>
+      setScale(fullscreenColumnScale(window.innerWidth, window.innerHeight));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -47,41 +51,49 @@ export function PlayerUiElements({ onClose }: PlayerUiElementsProps) {
         "flex min-w-[240px] flex-col items-stretch",
         !scaled && "w-[min(340px,32vw,calc(100vh-340px))]",
       )}
-      style={scaled ? { width: Math.round(BASE_COLUMN_WIDTH * scale) } : undefined}
+      style={
+        scaled ? { width: Math.round(BASE_COLUMN_WIDTH * scale) } : undefined
+      }
     >
-      <div
-        className={cn(
-          "relative aspect-square w-full shrink-0 overflow-hidden rounded-xl bg-black/20",
-          coverUrl && !isCoverLoaded && "animate-pulse",
-        )}
-      >
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={track?.id || coverUrl || "empty"}
-            initial={{ opacity: 0, filter: "blur(8px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(8px)" }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute inset-0"
-          >
-            {coverUrl ? (
-              <CoverImage
-                key={coverUrl}
-                src={coverUrl}
-                alt={track?.title || ""}
-                fill
-                sizes={`${Math.round(BASE_COLUMN_WIDTH * scale)}px`}
-                priority
-                unoptimized
-                className="rounded-xl object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/5 text-white/40">
-                <MusicNote size={64} />
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+      <div className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[22%] backdrop-blur-xl [mask-image:radial-gradient(closest-side,black_55%,transparent)]"
+        />
+        <div
+          className={cn(
+            "relative aspect-square w-full shrink-0 overflow-hidden rounded-xl bg-black/20",
+            coverUrl && !isCoverLoaded && "animate-pulse",
+          )}
+        >
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={track?.id || coverUrl || "empty"}
+              initial={{ opacity: 0, filter: "blur(8px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, filter: "blur(8px)" }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute inset-0"
+            >
+              {coverUrl ? (
+                <CoverImage
+                  key={coverUrl}
+                  src={coverUrl}
+                  alt={track?.title || ""}
+                  fill
+                  sizes={`${Math.round(BASE_COLUMN_WIDTH * scale)}px`}
+                  priority
+                  unoptimized
+                  className="rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-white/5 text-white/40">
+                  <MusicNote size={64} />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="mt-[24px]">

@@ -28,3 +28,4 @@ export * from "./hooks";
 export * from "./store/modalStore";
 export * from "./store/importStore";
 
+export { LocalTracksPage, LocalFilesCard, LocalDropZone } from "./local";

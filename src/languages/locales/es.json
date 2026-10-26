@@ -64,6 +64,9 @@
     "coming_soon": "Próximamente",
     "play_all": "Reproducir todo",
     "add_to_queue": "Añadir a la cola",
+    "remove_from_queue": "Quitar de la cola",
+    "removed_from_queue": "Quitado de la cola",
+    "undo": "Deshacer",
     "shuffle": "Aleatorio",
     "remove_from_library": "Quitar de la biblioteca",
     "save_to_library": "Guardar en la biblioteca",
@@ -387,6 +390,8 @@
     "track_unavailable": "\"{title}\" no está disponible, pasando a la siguiente...",
     "track_unavailable_title": "Canción no disponible",
     "playback_stopped_too_many_errors": "Reproducción detenida: demasiadas canciones fallaron al cargar.",
+    "youtube_refused_title": "YouTube rechaza esta conexión",
+    "youtube_refused_description": "El audio de YouTube está bloqueado en esta red. Desactiva tu VPN o proxy, o prueba otra conexión.",
     "speed_pitch": "Velocidad y tono",
     "speed": "Velocidad",
     "pitch": "Tono",
@@ -830,11 +835,6 @@
       "scope_main_app": "App principal",
       "scope_overlay": "Superposición",
       "reset_section": "Restablecer sección"
-    },
-    "cover_glow": {
-      "title": "Brillo de portada",
-      "description": "Brillo difuminado de la portada tras las páginas. Desactívalo para un fondo liso.",
-      "disabled_for_light": "Desactivado en el tema claro."
     }
   },
   "toast": {
@@ -984,6 +984,7 @@
   "track_sort": {
     "label": "Ordenar",
     "default": "Predeterminado",
+    "added": "Por fecha de adición",
     "title": "Por título (A–Z)",
     "duration": "Por duración",
     "popularity": "Por popularidad"

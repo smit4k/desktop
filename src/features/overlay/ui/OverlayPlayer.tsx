@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useTranslation } from "@/languages";
 import { motion } from "framer-motion";
 import { SkipNext, SkipPrevious } from "@solar-icons/react";
 import {
@@ -14,6 +13,22 @@ import { useDisableButtonFocus } from "@/features/navigation/hooks/useDisableBut
 import type { OverlayAction, OverlayStatePayload } from "../contracts";
 import { useShortcutsStore, matchesShortcut } from "@/features/shortcuts";
 
+function sampledPositionMs({
+  status,
+  positionMs,
+  positionAt,
+  playbackRate,
+}: Pick<
+  OverlayStatePayload,
+  "status" | "positionMs" | "positionAt" | "playbackRate"
+>): number {
+  if (status !== "playing" || typeof positionAt !== "number") {
+    return positionMs;
+  }
+  const rate = playbackRate && playbackRate > 0 ? playbackRate : 1;
+  return positionMs + Math.max(0, Date.now() - positionAt) * rate;
+}
+
 const OVERLAY_CARD_TRANSITION = {
   duration: 0.08,
   ease: [0.16, 1, 0.3, 1],
@@ -21,7 +36,6 @@ const OVERLAY_CARD_TRANSITION = {
 
 export function OverlayPlayer() {
   useDisableButtonFocus();
-  const { t } = useTranslation();
 
   const [state, setState] = useState<OverlayStatePayload>({
     status: "idle",
@@ -34,6 +48,9 @@ export function OverlayPlayer() {
 
   const [isInfoHovered, setIsInfoHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isShown, setIsShown] = useState(
+    () => !window.linerElectron?.onOverlayVisibility,
+  );
 
   const anchorPosRef = useRef(state.positionMs);
   const anchorTimeRef = useRef(performance.now());
@@ -43,9 +60,10 @@ export function OverlayPlayer() {
   const pullLatestState = useCallback(() => {
     window.linerElectron?.getOverlayInitialState?.().then((initial) => {
       if (initial) {
-        anchorPosRef.current = initial.positionMs;
+        const pos = sampledPositionMs(initial);
+        anchorPosRef.current = pos;
         anchorTimeRef.current = performance.now();
-        setInterpolatedPosMs(initial.positionMs);
+        setInterpolatedPosMs(pos);
         setState(initial);
       }
     });
@@ -72,6 +90,7 @@ export function OverlayPlayer() {
     const cleanupVisibility = window.linerElectron.onOverlayVisibility(
       (visible) => {
         setIsVisible(visible);
+        setIsShown(visible);
         if (visible) pullLatestState();
       },
     );
@@ -83,46 +102,72 @@ export function OverlayPlayer() {
   }, []);
 
   const isPlaying = state.status === "playing";
+  const rate =
+    state.playbackRate && state.playbackRate > 0 ? state.playbackRate : 1;
   const durationMs = Math.max(
     1,
     state.durationMs || state.track?.durationMs || 1,
   );
 
+  const interpolatedPosRef = useRef(interpolatedPosMs);
   useEffect(() => {
-    if (state.track?.id !== lastTrackIdRef.current) {
-      lastTrackIdRef.current = state.track?.id ?? null;
-      setInterpolatedPosMs(state.positionMs);
-      anchorPosRef.current = state.positionMs;
+    interpolatedPosRef.current = interpolatedPosMs;
+  }, [interpolatedPosMs]);
+
+  const {
+    status: stateStatus,
+    positionMs: statePositionMs,
+    positionAt: statePositionAt,
+    playbackRate: statePlaybackRate,
+  } = state;
+  const stateTrackId = state.track?.id;
+
+  useEffect(() => {
+    const syncedPos = sampledPositionMs({
+      status: stateStatus,
+      positionMs: statePositionMs,
+      positionAt: statePositionAt,
+      playbackRate: statePlaybackRate,
+    });
+    if (stateTrackId !== lastTrackIdRef.current) {
+      lastTrackIdRef.current = stateTrackId ?? null;
+      setInterpolatedPosMs(syncedPos);
+      anchorPosRef.current = syncedPos;
       anchorTimeRef.current = performance.now();
       return;
     }
 
-    if (state.status === "paused") {
-      const pos = state.positionMs > 0 ? state.positionMs : interpolatedPosMs;
+    if (stateStatus === "paused") {
+      const pos = syncedPos > 0 ? syncedPos : interpolatedPosRef.current;
       setInterpolatedPosMs(pos);
       anchorPosRef.current = pos;
       anchorTimeRef.current = performance.now();
       return;
     }
 
-    if (state.positionMs > 0 || interpolatedPosMs === 0) {
-      setInterpolatedPosMs(state.positionMs);
-      anchorPosRef.current = state.positionMs;
+    if (syncedPos > 0 || interpolatedPosRef.current === 0) {
+      setInterpolatedPosMs(syncedPos);
+      anchorPosRef.current = syncedPos;
       anchorTimeRef.current = performance.now();
     }
-  }, [state.positionMs, state.status, state.track?.id]);
+  }, [
+    statePositionMs,
+    statePositionAt,
+    stateStatus,
+    statePlaybackRate,
+    stateTrackId,
+  ]);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !isShown) return;
     let animId: number;
 
     const step = () => {
-      if (document.hidden) {
-        animId = requestAnimationFrame(step);
-        return;
-      }
       const elapsed = performance.now() - anchorTimeRef.current;
-      const current = Math.min(durationMs, anchorPosRef.current + elapsed);
+      const current = Math.min(
+        durationMs,
+        anchorPosRef.current + elapsed * rate,
+      );
       setInterpolatedPosMs(current);
       animId = requestAnimationFrame(step);
     };
@@ -132,15 +177,14 @@ export function OverlayPlayer() {
       const elapsed = performance.now() - anchorTimeRef.current;
       anchorPosRef.current = Math.min(
         durationMs,
-        anchorPosRef.current + elapsed,
+        anchorPosRef.current + elapsed * rate,
       );
       anchorTimeRef.current = performance.now();
     };
-  }, [isPlaying, durationMs]);
+  }, [isPlaying, isShown, durationMs, rate]);
 
   const currentPosMs = interpolatedPosMs;
   const progressRatio = Math.min(1, Math.max(0, currentPosMs / durationMs));
-
 
   // Keyboard Shortcuts (Miniplayer mode)
   useEffect(() => {
@@ -241,7 +285,6 @@ export function OverlayPlayer() {
           transformOrigin: "center center",
         }}
       >
-
         {/* Background Progress Fill - Straight rectangular without rounding */}
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-[1] rounded-none"

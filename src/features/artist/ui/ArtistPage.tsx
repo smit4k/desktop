@@ -1,5 +1,12 @@
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useState, Suspense, useRef, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  Suspense,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   PlayFill,
   NewFolderLine,
@@ -36,7 +43,10 @@ import { useArtist } from "../hooks/useArtist";
 function stripMarkdown(text: string): string {
   return text
     .replace(/(Дискография)(Официальный)/g, "$1\n\n$2")
-    .replace(/(сайт|ВКонтакте|канал|#\d|TikTok)(Официальный|Сообщество|Страница|Телеграм|YouTube|TikTok|Twitch)/g, "$1, $2")
+    .replace(
+      /(сайт|ВКонтакте|канал|#\d|TikTok)(Официальный|Сообщество|Страница|Телеграм|YouTube|TikTok|Twitch)/g,
+      "$1, $2",
+    )
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
@@ -284,9 +294,7 @@ function ArtistContent() {
                         draggable={false}
                       />
                     ) : (
-                      <span
-                        className="text-[56px] font-[700] text-border-alpha-33"
-                      >
+                      <span className="text-[56px] font-[700] text-border-alpha-33">
                         {data.title.charAt(0)}
                       </span>
                     )
@@ -401,7 +409,10 @@ function ArtistContent() {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.28, ease: [0.25, 1, 0.5, 1] }}
+                            transition={{
+                              duration: 0.28,
+                              ease: [0.25, 1, 0.5, 1],
+                            }}
                             className="overflow-hidden flex flex-col"
                           >
                             {data.tracks.slice(5).map(renderTrack)}

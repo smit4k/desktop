@@ -6,6 +6,7 @@ import {
   useUnlikeTrack,
 } from "@/features/library/hooks";
 import { ArtistLink } from "@/features/artist";
+import { isLocalTrackId } from "@/shared/media/local";
 import { useTranslation } from "@/languages";
 import { usePlayerState } from "../hooks/usePlayerState";
 import { LikeMorphIcon } from "./LikeMorphIcon";
@@ -19,6 +20,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
   const location = useLocation();
   const track = usePlayerState().currentTrack;
 
+  const isLocal = isLocalTrackId(track?.id);
   const isLiked = useIsTrackLiked(track?.id);
   const likeMutation = useLikeTrack();
   const unlikeMutation = useUnlikeTrack();
@@ -53,6 +55,7 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
             name={track?.artists || ""}
             artistId={track?.artistId}
             artistList={track?.artistList}
+            plain={isLocal}
             onNavigate={() => {
               if (location.pathname !== "/player") onClose?.();
             }}
@@ -61,14 +64,16 @@ export function FullscreenTrackInfo({ onClose }: FullscreenTrackInfoProps) {
         </p>
       </div>
 
-      <button
-        type="button"
-        aria-label={isLiked ? t("common.unlike") : t("common.like")}
-        onClick={handleLikeToggle}
-        className="relative inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border-none bg-[#303030]/50 backdrop-blur-2xl backdrop-saturate-150 cursor-pointer text-white transition-colors duration-200 ease-out hover:bg-[#303030]/65 active:scale-[0.92]"
-      >
-        <LikeMorphIcon liked={Boolean(isLiked)} size={20} />
-      </button>
+      {!isLocal && (
+        <button
+          type="button"
+          aria-label={isLiked ? t("common.unlike") : t("common.like")}
+          onClick={handleLikeToggle}
+          className="relative inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border-none bg-[#303030]/50 backdrop-blur-2xl backdrop-saturate-150 cursor-pointer text-white transition-colors duration-200 ease-out hover:bg-[#303030]/65 active:scale-[0.92]"
+        >
+          <LikeMorphIcon liked={Boolean(isLiked)} size={20} />
+        </button>
+      )}
     </div>
   );
 }

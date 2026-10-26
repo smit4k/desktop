@@ -6,7 +6,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useStableNavigate } from "@/shared/hooks/useStableNavigate";
 import type { TrackArtist } from "@/shared/types";
 
 export interface ArtistLinkProps {
@@ -17,6 +17,7 @@ export interface ArtistLinkProps {
   className?: string;
   separator?: string;
   onNavigate?: () => void;
+  plain?: boolean;
 }
 
 export default function ArtistLink({
@@ -27,8 +28,9 @@ export default function ArtistLink({
   className = "",
   separator = ", ",
   onNavigate,
+  plain = false,
 }: ArtistLinkProps) {
-  const navigate = useNavigate();
+  const navigate = useStableNavigate();
   const outerRef = useRef<HTMLSpanElement>(null);
   const innerRef = useRef<HTMLSpanElement>(null);
   const [delta, setDelta] = useState(0);
@@ -51,7 +53,11 @@ export default function ArtistLink({
 
   let innerContent: React.ReactNode = null;
 
-  if (artistList && artistList.length > 0) {
+  if (plain) {
+    const text = name ?? artists;
+    if (!text) return null;
+    innerContent = <span>{text}</span>;
+  } else if (artistList && artistList.length > 0) {
     innerContent = artistList.map((artist, index) => {
       const targetId =
         artist.id && artist.id !== "unknown"
@@ -63,9 +69,7 @@ export default function ArtistLink({
       return (
         <Fragment key={artist.id || `${artist.name}-${index}`}>
           {index > 0 && (
-            <span className="select-none whitespace-pre">
-              {separator}
-            </span>
+            <span className="select-none whitespace-pre">{separator}</span>
           )}
           <span
             role={isClickable ? "button" : undefined}
@@ -148,9 +152,7 @@ export default function ArtistLink({
         innerContent = parts.map((part, index) => (
           <Fragment key={`${part}-${index}`}>
             {index > 0 && (
-              <span className="select-none whitespace-pre">
-                {separator}
-              </span>
+              <span className="select-none whitespace-pre">{separator}</span>
             )}
             <span
               role="button"
@@ -207,17 +209,18 @@ export default function ArtistLink({
     }
   }
 
-  const maskStyle = delta > 0
-    ? {
-        maskImage: hovered
-          ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
-          : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
-        WebkitMaskImage: hovered
-          ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
-          : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
-        transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
-      }
-    : undefined;
+  const maskStyle =
+    delta > 0
+      ? {
+          maskImage: hovered
+            ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
+            : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+          WebkitMaskImage: hovered
+            ? "linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 14px), transparent 100%)"
+            : "linear-gradient(to right, black 0px, black calc(100% - 14px), transparent 100%)",
+          transition: "mask-image 200ms ease, -webkit-mask-image 200ms ease",
+        }
+      : undefined;
 
   return (
     <span
@@ -249,4 +252,3 @@ export default function ArtistLink({
     </span>
   );
 }
-

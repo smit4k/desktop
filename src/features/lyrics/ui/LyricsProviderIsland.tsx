@@ -160,9 +160,7 @@ export function LyricsProviderIsland() {
             }
           }}
           className={`flex items-center gap-[6px] h-[26px] min-h-[26px] max-h-[26px] px-[8px] rounded-md text-[12px] font-[500] text-white transition-all border-none bg-transparent ${
-            hasMultiple
-              ? "hover:bg-white/10 cursor-pointer"
-              : "cursor-default"
+            hasMultiple ? "hover:bg-white/10 cursor-pointer" : "cursor-default"
           }`}
           style={{ fontFamily: "var(--font-inter), sans-serif" }}
         >
@@ -277,10 +275,7 @@ export function LyricsProviderIsland() {
                 >
                   <span className="truncate">{option.provider}</span>
                   {isActive ? (
-                    <CheckFill
-                      size={14}
-                      className="text-white shrink-0"
-                    />
+                    <CheckFill size={14} className="text-white shrink-0" />
                   ) : (
                     <span className="text-[10px] font-mono text-white/40 shrink-0">
                       {idx + 1}
@@ -434,4 +429,3 @@ export function LyricsProviderIsland() {
     </div>
   );
 }
-

@@ -1,8 +1,10 @@
-export type LyricsFormat = 'plain' | 'lrc' | 'ttml' | 'qrc' | 'richsync';
+export type LyricsFormat = "plain" | "lrc" | "ttml" | "qrc" | "richsync";
 
-export type LyricsContentKind = 'plain' | 'line_synced' | 'word_synced' | 'syllable_synced';
+export type LyricsContentKind =
+  "plain" | "line_synced" | "word_synced" | "syllable_synced";
 
-export type LyricsSyncLevel = 'plain' | 'line_level' | 'word_level' | 'syllable_level';
+export type LyricsSyncLevel =
+  "plain" | "line_level" | "word_level" | "syllable_level";
 
 export interface RawLyricsCandidate {
   matchedTrack?: {
@@ -36,7 +38,7 @@ export interface LyricsCandidate extends RawLyricsCandidate {
 
 export type LyricsStreamEvent =
   | {
-      type: 'metadata';
+      type: "metadata";
       track: {
         id: string;
         title: string;
@@ -45,33 +47,33 @@ export type LyricsStreamEvent =
       };
     }
   | {
-      type: 'provider';
+      type: "provider";
       provider: string;
-      status: 'found';
+      status: "found";
       syncLevel: LyricsSyncLevel;
       candidate: LyricsCandidate;
       durationMs?: number;
     }
   | {
-      type: 'provider';
+      type: "provider";
       provider: string;
-      status: 'not_found';
+      status: "not_found";
       durationMs?: number;
     }
   | {
-      type: 'provider';
+      type: "provider";
       provider: string;
-      status: 'error';
+      status: "error";
       message: string;
       durationMs?: number;
     }
   | {
-      type: 'done';
+      type: "done";
       cached: boolean;
       best?: {
         provider: string;
         quality: number;
         syncLevel: LyricsSyncLevel;
       };
-      status?: 'not_found';
+      status?: "not_found";
     };

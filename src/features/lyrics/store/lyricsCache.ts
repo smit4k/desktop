@@ -319,7 +319,7 @@ class LyricsCache {
   private saveToStorage(item: CachedLyricsItem) {
     try {
       localStorage.setItem(STORAGE_PREFIX + item.trackId, JSON.stringify(item));
-    } catch (e) {
+    } catch {
       this.evictOldest(20);
       try {
         localStorage.setItem(

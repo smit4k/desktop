@@ -64,6 +64,9 @@
     "coming_soon": "Wkrótce",
     "play_all": "Odtwórz wszystko",
     "add_to_queue": "Dodaj do kolejki",
+    "remove_from_queue": "Usuń z kolejki",
+    "removed_from_queue": "Usunięto z kolejki",
+    "undo": "Cofnij",
     "shuffle": "Losowo",
     "remove_from_library": "Usuń z biblioteki",
     "save_to_library": "Zapisz w bibliotece",
@@ -389,6 +392,8 @@
     "track_unavailable": "„{title}” jest niedostępny, pomijam...",
     "track_unavailable_title": "Utwór niedostępny",
     "playback_stopped_too_many_errors": "Odtwarzanie zatrzymane: zbyt wielu utworów nie udało się wczytać.",
+    "youtube_refused_title": "YouTube odrzuca to połączenie",
+    "youtube_refused_description": "Dźwięk z YouTube jest zablokowany w tej sieci. Wyłącz VPN lub proxy albo spróbuj innego połączenia.",
     "speed_pitch": "Tempo i wysokość",
     "speed": "Tempo",
     "pitch": "Wysokość",
@@ -780,11 +785,6 @@
     },
     "connection": {
       "open_folder": "Otwórz lokalizację zapisu"
-    },
-    "cover_glow": {
-      "title": "Poświata okładki",
-      "description": "Rozmyta poświata okładki za stronami. Wyłącz, aby zostawić jednolite tło.",
-      "disabled_for_light": "Wyłączone w jasnym motywie."
     }
   },
   "toast": {
@@ -933,6 +933,7 @@
   "track_sort": {
     "label": "Sortowanie",
     "default": "Domyślnie",
+    "added": "Według daty dodania",
     "title": "Według tytułu (A–Z)",
     "duration": "Według długości",
     "popularity": "Według popularności"

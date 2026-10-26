@@ -64,6 +64,9 @@
     "coming_soon": "Prossimamente",
     "play_all": "Riproduci tutto",
     "add_to_queue": "Aggiungi alla coda",
+    "remove_from_queue": "Rimuovi dalla coda",
+    "removed_from_queue": "Rimosso dalla coda",
+    "undo": "Annulla",
     "shuffle": "Riproduzione casuale",
     "remove_from_library": "Rimuovi dalla libreria",
     "save_to_library": "Salva in libreria",
@@ -385,6 +388,8 @@
     "track_unavailable": "\"{title}\" non è disponibile, lo salto...",
     "track_unavailable_title": "Brano non disponibile",
     "playback_stopped_too_many_errors": "Riproduzione interrotta: non è stato possibile caricare troppi brani.",
+    "youtube_refused_title": "YouTube rifiuta questa connessione",
+    "youtube_refused_description": "L'audio di YouTube è bloccato su questa rete. Disattiva VPN o proxy, oppure prova un'altra connessione.",
     "speed_pitch": "Velocità e tonalità",
     "speed": "Velocità",
     "pitch": "Tonalità",
@@ -776,11 +781,6 @@
     },
     "connection": {
       "open_folder": "Apri la posizione di salvataggio"
-    },
-    "cover_glow": {
-      "title": "Bagliore copertina",
-      "description": "Bagliore sfocato della copertina dietro le pagine. Disattiva per uno sfondo semplice.",
-      "disabled_for_light": "Disattivato nel tema chiaro."
     }
   },
   "toast": {
@@ -929,6 +929,7 @@
   "track_sort": {
     "label": "Ordina",
     "default": "Predefinito",
+    "added": "Per data di aggiunta",
     "title": "Per titolo (A–Z)",
     "duration": "Per durata",
     "popularity": "Per popolarità"

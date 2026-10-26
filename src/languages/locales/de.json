@@ -186,7 +186,10 @@
     "tracks_plural": "{count} Titel",
     "songs_plural": "{count} Titel",
     "env_warning": "Die App sollte in Electron laufen – Deeplinks, Offline-Prüfungen und Teilen benötigen die Desktop-Bridge.",
-    "env_skip": "Überspringen"
+    "env_skip": "Überspringen",
+    "remove_from_queue": "Aus der Warteschlange entfernen",
+    "removed_from_queue": "Aus der Warteschlange entfernt",
+    "undo": "Rückgängig"
   },
   "home": {
     "speedDial": "Schnellzugriff",
@@ -390,6 +393,8 @@
     "track_unavailable": "„{title}“ ist nicht verfügbar und wird übersprungen…",
     "track_unavailable_title": "Titel nicht verfügbar",
     "playback_stopped_too_many_errors": "Wiedergabe gestoppt – zu viele Titel konnten nicht geladen werden.",
+    "youtube_refused_title": "YouTube lehnt diese Verbindung ab",
+    "youtube_refused_description": "Audio von YouTube ist in diesem Netzwerk blockiert. Schalte VPN oder Proxy aus oder nutze eine andere Verbindung.",
     "speed_pitch": "Tempo & Tonhöhe",
     "speed": "Tempo",
     "pitch": "Tonhöhe",
@@ -721,11 +726,6 @@
     },
     "connection": {
       "open_folder": "Speicherort öffnen"
-    },
-    "cover_glow": {
-      "title": "Cover-Leuchten",
-      "description": "Unscharfes Cover-Leuchten hinter Seiten. Ausschalten für einen schlichten Hintergrund.",
-      "disabled_for_light": "Im hellen Design aus."
     }
   },
   "toast": {
@@ -873,6 +873,7 @@
   "track_sort": {
     "label": "Sortieren",
     "default": "Standard",
+    "added": "Nach Hinzufügedatum",
     "title": "Nach Titel (A–Z)",
     "duration": "Nach Dauer",
     "popularity": "Nach Beliebtheit"

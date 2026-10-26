@@ -11,6 +11,8 @@ import type { BraccatoLyricsElement } from "@braccato/core/element";
 import { useNavigate } from "react-router-dom";
 import { shouldReleaseTopPin, startsPinnedToTop } from "./lyricsTopPin";
 import { usePlayerState } from "../hooks/usePlayerState";
+import { useScrollEdges } from "../hooks/useScrollEdges";
+import { cn } from "@/shared/lib";
 import { playerEngine } from "../engine/playerEngine";
 import {
   useLyricsStore,
@@ -23,11 +25,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PlayerUiElements } from "./PlayerUiElements";
 import { DownLine } from "@mingcute/react";
 import { preloadCoverArt, useCoverSrc } from "@/features/covers";
+import {
+  isWindowVisible,
+  onWindowVisibilityChange,
+} from "@/shared/utils/windowVisibility";
 import "@braccato/core/element";
 import "@braccato/core/styles/variables.css";
 import "@braccato/core/styles/lyrics.css";
 import "@braccato/core/styles/instrumental.css";
 import KawarpWrapper from "./KawarpWrapper";
+import AmbientLayer from "./AmbientLayer";
 import { useTranslation } from "@/languages";
 
 const BRACCATO_TAG = "braccato-lyrics";
@@ -46,7 +53,9 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   const lastWheelTimeRef = useRef(0);
   const isInFreeSearchRef = useRef(false);
   const waitingForAudioAfterClickRef = useRef(false);
-  const pinnedToTopRef = useRef(startsPinnedToTop(player.status, player.positionMs));
+  const pinnedToTopRef = useRef(
+    startsPinnedToTop(player.status, player.positionMs),
+  );
 
   const updateAnnotations = useCallback(() => {
     const element = elementRef.current;
@@ -207,7 +216,8 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
           waitingForAudioAfterClickRef.current ||
           pinnedToTopRef.current ||
           isInFreeSearchRef.current
-        ) return;
+        )
+          return;
         requestAnimationFrame(() => {
           if (!waitingForAudioAfterClickRef.current) {
             scrollToActiveLine("auto");
@@ -219,6 +229,8 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       let lastReportedIndex = -1;
 
       const checkActiveLine = () => {
+        // minimized or hidden: stop until the window shows again
+        if (!isWindowVisible()) return;
         const audioEl = document.getElementById(
           "liner-audio",
         ) as HTMLAudioElement | null;
@@ -249,6 +261,11 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       };
 
       syncRafId = requestAnimationFrame(checkActiveLine);
+      const stopWatchingVisibility = onWindowVisibilityChange((visible) => {
+        if (!visible) return;
+        cancelAnimationFrame(syncRafId);
+        syncRafId = requestAnimationFrame(checkActiveLine);
+      });
 
       el.addEventListener("braccato:lyrics-loaded", onLyricsLoaded);
       el.addEventListener("braccato:line-click", handleBraccatoLineClick);
@@ -266,6 +283,7 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
 
       return () => {
         cancelAnimationFrame(syncRafId);
+        stopWatchingVisibility();
         useLyricsStore.getState().setActiveLineIndex(null);
         el.removeEventListener("braccato:lyrics-loaded", onLyricsLoaded);
         el.removeEventListener("braccato:line-click", handleBraccatoLineClick);
@@ -300,7 +318,10 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     updateAnnotations();
     if (anchor) {
       element.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
-    } else if (!pinnedToTopRef.current && !waitingForAudioAfterClickRef.current) {
+    } else if (
+      !pinnedToTopRef.current &&
+      !waitingForAudioAfterClickRef.current
+    ) {
       scrollToActiveLine("auto");
     }
   }, [showPronunciation, updateAnnotations, scrollToActiveLine]);
@@ -320,7 +341,12 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     let attempts = 0;
 
     const checkAndScroll = () => {
-      if (cancelled || waitingForAudioAfterClickRef.current || pinnedToTopRef.current) return;
+      if (
+        cancelled ||
+        waitingForAudioAfterClickRef.current ||
+        pinnedToTopRef.current
+      )
+        return;
       attempts++;
       const success = scrollToActiveLine("auto");
       if (!success && attempts < 30) {
@@ -340,9 +366,16 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     const startedAt = performance.now();
     let rafId = 0;
     const holdTop = () => {
-      const el = elementRef.current as HTMLElement & { renderer?: { noteUserScroll?: () => void; resumeAutoscroll?: () => void } };
+      const el = elementRef.current as HTMLElement & {
+        renderer?: {
+          noteUserScroll?: () => void;
+          resumeAutoscroll?: () => void;
+        };
+      };
       if (!pinnedToTopRef.current) return;
-      const audio = document.getElementById("liner-audio") as HTMLAudioElement | null;
+      const audio = document.getElementById(
+        "liner-audio",
+      ) as HTMLAudioElement | null;
       const release = shouldReleaseTopPin({
         status: playerEngine.getSnapshot().status,
         audioPaused: !audio || audio.paused,
@@ -364,12 +397,16 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
+  const { atTop, atBottom } = useScrollEdges(elementRef, lyrics);
+
   return (
     <div className="relative flex flex-col flex-1 w-full h-full min-h-0">
       {createElement(BRACCATO_TAG, {
         ref: setElement,
         source: "#liner-audio",
-        className: "block flex-1 w-full h-full px-6",
+        className: "lyrics-edge-fog block flex-1 w-full h-full px-6",
+        "data-at-top": atTop ? "" : undefined,
+        "data-at-bottom": atBottom ? "" : undefined,
         style: {
           overflowY: "auto",
           overflowX: "hidden",
@@ -377,6 +414,20 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
           scrollbarWidth: "none",
         },
       })}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 h-[18%] backdrop-blur-md transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] [mask-image:linear-gradient(to_bottom,black,transparent)]",
+          atTop ? "opacity-0" : "opacity-100",
+        )}
+      />
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 h-[26%] backdrop-blur-md transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] [mask-image:linear-gradient(to_top,black,transparent)]",
+          atBottom ? "opacity-0" : "opacity-100",
+        )}
+      />
     </div>
   );
 }
@@ -459,8 +510,13 @@ export function FullscreenPlayer({
           />
         )}
         {effectsReady ? (
-          <KawarpWrapper src={kawarpSrc} onLoad={onKawarpLoad} onError={onError} />
+          <KawarpWrapper
+            src={kawarpSrc}
+            onLoad={onKawarpLoad}
+            onError={onError}
+          />
         ) : null}
+        <AmbientLayer trackId={currentTrackId} />
       </div>
 
       <div className="absolute inset-0 z-[1] bg-black/40" />

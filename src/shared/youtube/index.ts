@@ -5,6 +5,7 @@ export {
 export {
   resolveDirectAudioStream,
   toVideoId,
+  STREAMS_REFUSED_MESSAGE,
   type ResolvedAudioStream,
   type ResolveAudioOptions,
 } from "./innertube/innertubeAudio";
@@ -45,7 +46,10 @@ export {
 export {
   completeYoutubeTvSignIn,
   getYoutubeAuthTokens,
+  getYoutubePageId,
+  getYoutubeSessionKey,
   isYoutubeSignedIn,
+  selectYoutubePageId,
   signOutYoutube,
   startYoutubeTvSignIn,
 } from "./auth/youtubeAuthSession";
@@ -53,6 +57,8 @@ export type { TvDeviceCode } from "./auth/tvDeviceFlow";
 export { YoutubeAuthError, type YoutubeAuthTokens } from "./auth/tvTokens";
 export {
   fetchYoutubeAccount,
+  fetchYoutubeAccounts,
+  selectedYoutubeAccount,
   type YoutubeAccount,
 } from "./auth/youtubeAccount";
 export {
