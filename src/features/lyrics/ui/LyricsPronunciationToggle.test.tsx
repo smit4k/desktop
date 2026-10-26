@@ -50,25 +50,19 @@ describe("LyricsPronunciationToggle", () => {
     expect(document.querySelector('[role="menu"]')).toBeNull();
   });
 
-  it("disables unavailable pronunciation without changing the saved preference", () => {
+  it("hides unavailable pronunciation without changing the saved preference", () => {
     act(() => useLyricsStore.getState().setShowPronunciation(true));
     act(() =>
       useLyricsStore
         .getState()
         .setLyricsState(parseRawLyrics("[00:01.00] Hello")),
     );
-    const button = container.querySelector<HTMLButtonElement>("button")!;
-    expect(button.disabled).toBe(true);
-    expect(button.getAttribute("aria-pressed")).toBe("false");
-    expect(button.getAttribute("aria-label")).toBe(
-      "Pronunciation — Unavailable for this source",
-    );
-    act(() => button.click());
+    expect(container.children).toHaveLength(0);
     expect(useLyricsStore.getState().showPronunciation).toBe(true);
     act(() =>
       useLyricsStore.getState().setLyricsState(parseRawLyrics(japanese)),
     );
-    expect(button.disabled).toBe(false);
+    const button = container.querySelector<HTMLButtonElement>("button")!;
     expect(button.getAttribute("aria-pressed")).toBe("true");
   });
 
