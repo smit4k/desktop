@@ -1,73 +1,61 @@
 import {
   injectRomanization,
-  injectTranslation,
   type LyricsRenderer,
   type Lyric,
 } from "@braccato/core";
 import {
+  BACKGROUND_LINE_CLASS,
   ROMANIZED_LYRICS_CLASS,
-  TRANSLATED_LYRICS_CLASS,
 } from "@braccato/core/constants";
 
-export function getLyricAnnotations(line: Lyric) {
-  if (line.isInstrumental) return { translation: null, pronunciation: null };
-
-  const translations = Object.entries(line.translations ?? {});
-  const translation =
-    translations
-      .find(([lang, text]) => /^en$/i.test(lang) && text.trim())?.[1]
-      .trim() ||
-    translations
-      .find(([lang, text]) => /^en-/i.test(lang) && text.trim())?.[1]
-      .trim() ||
-    (/^en(?:-|$)/i.test(line.translation?.lang ?? "")
-      ? line.translation?.text.trim()
-      : null) ||
-    null;
-  const pronunciation =
-    line.romanization?.trim() ||
-    line.timedRomanization
-      ?.map((part) => part.words)
-      .join("")
-      .trim() ||
-    null;
-
-  return { translation, pronunciation };
+export function getLyricPronunciation(line: Lyric, isBackground = false) {
+  if (line.isInstrumental) return null;
+  if (line.timedRomanization?.length) {
+    return (
+      line.timedRomanization
+        .filter((part) => Boolean(part.isBackground) === isBackground)
+        .map((part) => part.words)
+        .join("")
+        .trim() || null
+    );
+  }
+  return isBackground ? null : line.romanization?.trim() || null;
 }
 
 export function decorateLyricsLines(
   renderer: Pick<LyricsRenderer, "lines">,
   lyrics: Lyric[],
-  preferences: { showTranslation: boolean; showPronunciation: boolean },
+  preferences: { showPronunciation: boolean },
 ) {
   renderer.lines.forEach((line, index) => {
     const lyric = lyrics[index];
     if (!lyric) return;
-    const { translation, pronunciation } = getLyricAnnotations(lyric);
     const element = line.lyricElement;
-    const doc = element.ownerDocument;
+    const background = element.querySelector<HTMLElement>(
+      `.${BACKGROUND_LINE_CLASS}`,
+    );
 
-    if (pronunciation) {
+    for (const isBackground of [false, true]) {
+      const pronunciation = getLyricPronunciation(lyric, isBackground);
+      const parent = isBackground ? background : element;
+      if (!pronunciation || !parent) continue;
       injectRomanization(
-        doc,
-        element,
+        element.ownerDocument,
+        parent,
         line,
         pronunciation,
-        lyric.timedRomanization,
+        lyric.timedRomanization?.filter(
+          (part) => Boolean(part.isBackground) === isBackground,
+        ),
       );
-    }
-    if (translation) injectTranslation(doc, element, translation);
-
-    const romanized = element.querySelector<HTMLElement>(
-      `.${ROMANIZED_LYRICS_CLASS}`,
-    );
-    const translated = element.querySelector<HTMLElement>(
-      `.${TRANSLATED_LYRICS_CLASS}`,
-    );
-    if (romanized) romanized.hidden = !preferences.showPronunciation;
-    if (translated) {
-      translated.lang = "en";
-      translated.hidden = !preferences.showTranslation;
+      const romanized = parent.querySelector<HTMLElement>(
+        `:scope > .${ROMANIZED_LYRICS_CLASS}`,
+      );
+      if (romanized) {
+        romanized.hidden = !preferences.showPronunciation;
+        if (!isBackground && background)
+          element.insertBefore(romanized, background);
+      }
     }
   });
 }

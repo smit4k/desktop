@@ -24,4 +24,4 @@ export {
   type SyncedLine,
 } from "./hooks/useLyricsAnimator";
 export { LyricsProviderIsland } from "./ui/LyricsProviderIsland";
-export { LyricsLanguageMenu } from "./ui/LyricsLanguageMenu";
+export { LyricsPronunciationToggle } from "./ui/LyricsPronunciationToggle";

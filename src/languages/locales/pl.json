@@ -378,8 +378,6 @@
     "close_fullscreen": "Zamknij pełny ekran",
     "failed_load_lyrics": "Nie udało się wczytać tekstu.",
     "lyric_languages": {
-      "label": "Języki tekstu",
-      "translation": "Tłumaczenie na angielski",
       "pronunciation": "Wymowa",
       "unavailable": "Niedostępne dla tego źródła"
     },

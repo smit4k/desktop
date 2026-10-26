@@ -381,8 +381,6 @@
     "close_fullscreen": "Close fullscreen",
     "failed_load_lyrics": "Failed to load lyrics.",
     "lyric_languages": {
-      "label": "Lyric languages",
-      "translation": "English translation",
       "pronunciation": "Pronunciation",
       "unavailable": "Unavailable for this source"
     },

@@ -376,8 +376,6 @@
     "close_fullscreen": "Закрити повноекранний режим",
     "failed_load_lyrics": "Не вдалося завантажити текст пісні.",
     "lyric_languages": {
-      "label": "Мови тексту",
-      "translation": "Переклад англійською",
       "pronunciation": "Вимова",
       "unavailable": "Недоступно для цього джерела"
     },

@@ -374,8 +374,6 @@
     "close_fullscreen": "Chiudi schermo intero",
     "failed_load_lyrics": "Impossibile caricare il testo.",
     "lyric_languages": {
-      "label": "Lingue del testo",
-      "translation": "Traduzione in inglese",
       "pronunciation": "Pronuncia",
       "unavailable": "Non disponibile per questa fonte"
     },

@@ -5,6 +5,7 @@ import type { BraccatoLyricsElement } from "@braccato/core/element";
 import { FullscreenPlayer } from "./FullscreenPlayer";
 import { parseRawLyrics, useLyricsStore } from "@/features/lyrics";
 import { debouncedStorage } from "@/shared/utils/storage";
+import backgroundRomanization from "@/features/lyrics/fixtures/background-romanization.ttml?raw";
 import japanese from "@/features/lyrics/fixtures/japanese.ttml?raw";
 
 const state = vi.hoisted(() => ({
@@ -68,13 +69,11 @@ describe("immersive lyric annotations", () => {
     });
     localStorage.setItem("liner_locale", "en");
     useLyricsStore.getState().reset();
-    useLyricsStore.setState({ showTranslation: true, showPronunciation: true });
-    useLyricsStore
-      .getState()
-      .setLyricsState({
-        ...parseRawLyrics(japanese),
-        currentLyricsTrackId: "track-1",
-      });
+    useLyricsStore.setState({ showPronunciation: true, trackOffsets: {} });
+    useLyricsStore.getState().setLyricsState({
+      ...parseRawLyrics(japanese),
+      currentLyricsTrackId: "track-1",
+    });
     audio = document.createElement("audio");
     audio.id = "liner-audio";
     audio.currentTime = 1.5;
@@ -92,7 +91,7 @@ describe("immersive lyric annotations", () => {
     container.remove();
     audio.remove();
     useLyricsStore.getState().reset();
-    useLyricsStore.setState({ showTranslation: true, showPronunciation: true });
+    useLyricsStore.setState({ showPronunciation: true, trackOffsets: {} });
     debouncedStorage.removeItem("liner_lyrics_session_v1");
     localStorage.removeItem("liner_locale");
     vi.restoreAllMocks();
@@ -104,22 +103,17 @@ describe("immersive lyric annotations", () => {
       container.querySelector<BraccatoLyricsElement>("braccato-lyrics")!;
     expect(element.status).toBe("rendering");
     const originalLine = element.renderer!.lines[0].lyricElement;
-    expect(
-      originalLine.querySelector(".blyrics--translated")?.textContent,
-    ).toBe("The world is waiting");
+    expect(originalLine.querySelector(".blyrics--translated")).toBeNull();
     expect(originalLine.querySelector(".blyrics--romanized")?.textContent).toBe(
       "sekai ga matteru",
     );
     const build = vi.spyOn(element.renderer!, "setLyrics");
     const relayout = vi.spyOn(element.renderer!, "relayout");
     const retick = vi.spyOn(element.renderer!, "retickFromPlaybackClock");
-    act(() => useLyricsStore.getState().setShowTranslation(false));
-    expect(
-      originalLine.querySelector<HTMLElement>(".blyrics--translated")!.hidden,
-    ).toBe(true);
+    act(() => useLyricsStore.getState().setShowPronunciation(false));
     expect(
       originalLine.querySelector<HTMLElement>(".blyrics--romanized")!.hidden,
-    ).toBe(false);
+    ).toBe(true);
     expect(element.renderer!.lines[0].lyricElement).toBe(originalLine);
     expect(element.mediaElement).toBe(audio);
     expect(audio.currentTime).toBe(1.5);
@@ -133,7 +127,7 @@ describe("immersive lyric annotations", () => {
       container.querySelector<BraccatoLyricsElement>("braccato-lyrics")!;
     act(() => useLyricsStore.getState().setOffset(500));
     expect(element.renderer!.lines[0].time).toBe(1.5);
-    expect(element.querySelectorAll(".blyrics--translated")).toHaveLength(1);
+    expect(element.querySelectorAll(".blyrics--romanized")).toHaveLength(1);
     act(() =>
       useLyricsStore
         .getState()
@@ -144,7 +138,67 @@ describe("immersive lyric annotations", () => {
     act(() =>
       useLyricsStore.getState().setLyricsState(parseRawLyrics(japanese)),
     );
-    expect(element.querySelectorAll(".blyrics--translated")).toHaveLength(1);
+    expect(element.querySelectorAll(".blyrics--romanized")).toHaveLength(1);
+  });
+
+  it("pairs each vocal with its own pronunciation without replacing background highlights", () => {
+    act(() =>
+      useLyricsStore
+        .getState()
+        .setLyricsState(parseRawLyrics(backgroundRomanization)),
+    );
+    const element =
+      container.querySelector<BraccatoLyricsElement>("braccato-lyrics")!;
+    const line = element.renderer!.lines[0];
+    const originalParts = line.parts.slice(0, 4);
+    const background = line.lyricElement.querySelector<HTMLElement>(
+      ".blyrics-background-line",
+    )!;
+    const romanizations = line.lyricElement.querySelectorAll<HTMLElement>(
+      ".blyrics--romanized",
+    );
+    expect(romanizations).toHaveLength(2);
+    expect(
+      romanizations[0].querySelector(".blyrics-bidi-run:not([aria-hidden])")
+        ?.textContent,
+    ).toBe("sekai e");
+    expect(
+      romanizations[1].querySelector(".blyrics-bidi-run:not([aria-hidden])")
+        ?.textContent,
+    ).toBe("koe hibike");
+    expect(romanizations[0].nextElementSibling).toBe(background);
+    expect(romanizations[1].parentElement).toBe(background);
+    expect(originalParts.map((part) => [part.time, part.duration])).toEqual([
+      [1, 1],
+      [2, 2],
+      [2.5, 0.5],
+      [3, 1.5],
+    ]);
+    expect(
+      line.parts.slice(4).map((part) => [part.time, part.duration]),
+    ).toEqual([
+      [1, 1],
+      [2, 2],
+      [2.5, 0.5],
+      [3, 1.5],
+    ]);
+    for (const show of [false, true, false, true]) {
+      act(() => useLyricsStore.getState().setShowPronunciation(show));
+      expect([...romanizations].every((row) => row.hidden === !show)).toBe(
+        true,
+      );
+      expect(
+        line.lyricElement.querySelectorAll(".blyrics--romanized"),
+      ).toHaveLength(2);
+      expect(line.parts).toHaveLength(8);
+      expect(line.parts.slice(0, 4)).toEqual(originalParts);
+      expect(background.contains(originalParts[2].lyricElement)).toBe(true);
+      expect(background.contains(originalParts[2].highlightElement)).toBe(true);
+    }
+    act(() => useLyricsStore.getState().setOffset(500));
+    expect(element.renderer!.lines[0].parts.map((part) => part.time)).toEqual([
+      1.5, 2.5, 3, 3.5, 1.5, 2.5, 3, 3.5,
+    ]);
   });
 
   it("keeps manual browsing active and avoids recentering when annotations change", () => {

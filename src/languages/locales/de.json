@@ -379,8 +379,6 @@
     "close_fullscreen": "Vollbild schließen",
     "failed_load_lyrics": "Songtext konnte nicht geladen werden.",
     "lyric_languages": {
-      "label": "Liedtextsprachen",
-      "translation": "Englische Übersetzung",
       "pronunciation": "Aussprache",
       "unavailable": "Für diese Quelle nicht verfügbar"
     },

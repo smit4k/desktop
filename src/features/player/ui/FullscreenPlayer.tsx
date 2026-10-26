@@ -16,7 +16,7 @@ import {
   useLyricsStore,
   LyricsProviderIsland,
   braccatoThemeCss,
-  LyricsLanguageMenu,
+  LyricsPronunciationToggle,
 } from "@/features/lyrics";
 import { decorateLyricsLines } from "@/features/lyrics/engine/lyricsAnnotations";
 import { AnimatePresence, motion } from "framer-motion";
@@ -41,7 +41,6 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
   const player = usePlayerState();
   const elementRef = useRef<BraccatoLyricsElement | null>(null);
   const latestLyricsRef = useRef(lyrics);
-  const showTranslation = useLyricsStore((s) => s.showTranslation);
   const showPronunciation = useLyricsStore((s) => s.showPronunciation);
   const freeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWheelTimeRef = useRef(0);
@@ -299,7 +298,7 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     } else if (!pinnedToTopRef.current && !waitingForAudioAfterClickRef.current) {
       scrollToActiveLine("auto");
     }
-  }, [showTranslation, showPronunciation, updateAnnotations, scrollToActiveLine]);
+  }, [showPronunciation, updateAnnotations, scrollToActiveLine]);
 
   useEffect(() => {
     if (
@@ -470,7 +469,7 @@ export function FullscreenPlayer({
           {hasLyrics && (
             <div className="absolute top-[6px] left-0 right-0 z-30 pointer-events-none flex flex-wrap items-start justify-center gap-2 px-2">
               {availableProviders.length > 0 && <LyricsProviderIsland />}
-              <LyricsLanguageMenu />
+              <LyricsPronunciationToggle />
             </div>
           )}
 

@@ -376,8 +376,6 @@
     "close_fullscreen": "Закрыть полноэкранный режим",
     "failed_load_lyrics": "Не удалось загрузить текст песни.",
     "lyric_languages": {
-      "label": "Языки текста",
-      "translation": "Перевод на английский",
       "pronunciation": "Произношение",
       "unavailable": "Недоступно для этого источника"
     },
