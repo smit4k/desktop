@@ -94,6 +94,8 @@ describe("immersive lyric annotations", () => {
     useLyricsStore.setState({ showPronunciation: true, trackOffsets: {} });
     debouncedStorage.removeItem("liner_lyrics_session_v1");
     localStorage.removeItem("liner_locale");
+    state.status = "paused";
+    state.positionMs = 1500;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -200,6 +202,59 @@ describe("immersive lyric annotations", () => {
       1.5, 2.5, 3, 3.5, 1.5, 2.5, 3, 3.5,
     ]);
   });
+
+  it.each(["playing", "paused"])(
+    "keeps the current lyric centered when toggled during a scroll animation (%s)",
+    (status) => {
+      state.status = status;
+      state.positionMs = 2500;
+      act(() =>
+        root.render(
+          <FullscreenPlayer
+            key="following"
+            effectsReady={false}
+            onClose={vi.fn()}
+          />,
+        ),
+      );
+      const element =
+        container.querySelector<BraccatoLyricsElement>("braccato-lyrics")!;
+      const renderer = element.renderer!;
+      const line = renderer.lines[0];
+      Object.defineProperty(renderer.container, "offsetTop", {
+        configurable: true,
+        value: 24,
+      });
+      line.lyricElement.classList.add("blyrics--active");
+      vi.spyOn(element, "getBoundingClientRect").mockReturnValue({
+        top: 100,
+        height: 400,
+      } as DOMRect);
+      vi.spyOn(renderer, "relayout").mockImplementation(() => {
+        line.position = useLyricsStore.getState().showPronunciation ? 900 : 600;
+        line.height = useLyricsStore.getState().showPronunciation ? 120 : 80;
+      });
+      vi.spyOn(renderer, "retickFromPlaybackClock").mockReturnValue("ok");
+      // A running scroll animation displaces the visual bounds from the measured layout.
+      vi.spyOn(line.lyricElement, "getBoundingClientRect").mockImplementation(
+        () =>
+          ({
+            top: 100 + 24 + line.position - element.scrollTop + 300,
+            height: line.height,
+          }) as DOMRect,
+      );
+      for (const show of [false, true, false, true]) {
+        act(() => useLyricsStore.getState().setShowPronunciation(show));
+        expect(element.scrollTop).toBe(
+          24 + line.position - 200 + line.height / 2,
+        );
+        expect(line.lyricElement.classList.contains("blyrics--active")).toBe(
+          true,
+        );
+        expect(audio.currentTime).toBe(1.5);
+      }
+    },
+  );
 
   it("keeps manual browsing active and avoids recentering when annotations change", () => {
     const element =

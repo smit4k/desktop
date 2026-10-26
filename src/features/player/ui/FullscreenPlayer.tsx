@@ -76,14 +76,19 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
       );
       if (activeEls.length === 0) return false;
       const activeEl = activeEls[activeEls.length - 1];
+      const activeLine = el.renderer?.lines.find(
+        (line) => line.lyricElement === activeEl,
+      );
 
       const containerRect = el.getBoundingClientRect();
-      const elRect = activeEl.getBoundingClientRect();
-      if (containerRect.height === 0 || elRect.height === 0) return false;
+      if (containerRect.height === 0 || !activeLine || activeLine.height <= 0)
+        return false;
 
-      const offset = elRect.top - containerRect.top + el.scrollTop;
+      // Screen bounds include temporary offsets from an in-flight lyric scroll animation.
+      const offset =
+        (el.renderer?.container?.offsetTop ?? 0) + activeLine.position;
       const targetScrollTop =
-        offset - containerRect.height / 2 + elRect.height / 2;
+        offset - containerRect.height / 2 + activeLine.height / 2;
 
       if (behavior === "auto") {
         el.scrollTop = Math.max(0, targetScrollTop);
